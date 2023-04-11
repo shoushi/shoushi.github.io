@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="mysql," />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Shoushi`s Notes" type="application/atom+xml" />
+
+
+
+
+
+
+<meta name="description" content="你的哪些SQL慢？看看MySQL慢查询日志吧 前言在项目里面，多多少少都隐藏着一些执行比较慢的SQL, 不同的开发测试人员在平时使用的过程中多多少少都能够遇到，但是无法立马有时间去排查解决。那么如果有一个文件能够将这些使用过程中比较慢的SQL记录下来，定期去分析排查，那该多美好啊。这种情况MySQL也替我们想到了，它提供了SQL慢查询的日志，本文就分享下如何使用吧。 什么是慢查询日志？MySQL的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL慢查询">
+<meta property="og:url" content="http://localhost:4000/2023/04/01/mysql/%E6%85%A2%E6%9F%A5%E8%AF%A2/index.html">
+<meta property="og:site_name" content="Shoushi&#96;s Notes">
+<meta property="og:description" content="你的哪些SQL慢？看看MySQL慢查询日志吧 前言在项目里面，多多少少都隐藏着一些执行比较慢的SQL, 不同的开发测试人员在平时使用的过程中多多少少都能够遇到，但是无法立马有时间去排查解决。那么如果有一个文件能够将这些使用过程中比较慢的SQL记录下来，定期去分析排查，那该多美好啊。这种情况MySQL也替我们想到了，它提供了SQL慢查询的日志，本文就分享下如何使用吧。 什么是慢查询日志？MySQL的">
+<meta property="og:locale">
+<meta property="og:image" content="http://localhost:4000/media/%E6%85%A2%E6%9F%A5%E8%AF%A2/c54e191f715b46f790314f91ee307dd9tplv-k3u1fbpfcp-zoom-crop-mark3024302430241702.awebp">
+<meta property="og:image" content="http://localhost:4000/media/%E6%85%A2%E6%9F%A5%E8%AF%A2/d27eadf02574490392490f937b367416tplv-k3u1fbpfcp-zoom-in-crop-mark4536000.awebp">
+<meta property="og:image" content="http://localhost:4000/media/%E6%85%A2%E6%9F%A5%E8%AF%A2/25c5256478534072aeaeae967b8a164btplv-k3u1fbpfcp-zoom-in-crop-mark4536000.awebp">
+<meta property="og:image" content="http://localhost:4000/media/%E6%85%A2%E6%9F%A5%E8%AF%A2/193484811274457cb7bfc12be950bfe7tplv-k3u1fbpfcp-zoom-in-crop-mark4536000.awebp">
+<meta property="og:image" content="http://localhost:4000/media/%E6%85%A2%E6%9F%A5%E8%AF%A2/b8cde05cdcac4b069abc4cab2c48e223tplv-k3u1fbpfcp-zoom-in-crop-mark4536000.awebp">
+<meta property="og:image" content="http://localhost:4000/media/%E6%85%A2%E6%9F%A5%E8%AF%A2/ca631d0a573c4afbac3c6c853b74a7aatplv-k3u1fbpfcp-zoom-in-crop-mark4536000.awebp">
+<meta property="og:image" content="http://localhost:4000/media/%E6%85%A2%E6%9F%A5%E8%AF%A2/554c1a7baf8c497985dfa3b06849bc50tplv-k3u1fbpfcp-zoom-in-crop-mark4536000.awebp">
+<meta property="og:image" content="http://localhost:4000/media/%E6%85%A2%E6%9F%A5%E8%AF%A2/a054f8b478b24c2c8112ecf49c5e280btplv-k3u1fbpfcp-zoom-in-crop-mark4536000.awebp">
+<meta property="og:image" content="http://localhost:4000/media/%E6%85%A2%E6%9F%A5%E8%AF%A2/17062293febf4466b0b27e4abcccea76tplv-k3u1fbpfcp-zoom-in-crop-mark4536000.awebp">
+<meta property="article:published_time" content="2023-04-01T09:21:36.576Z">
+<meta property="article:modified_time" content="2023-04-01T09:24:13.765Z">
+<meta property="article:author" content="liqun.guan">
+<meta property="article:tag" content="mysql">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://localhost:4000/media/%E6%85%A2%E6%9F%A5%E8%AF%A2/c54e191f715b46f790314f91ee307dd9tplv-k3u1fbpfcp-zoom-crop-mark3024302430241702.awebp">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://localhost:4000/2023/04/01/mysql/慢查询/"/>
+
+
+
+
+
+  <title>MySQL慢查询 | Shoushi`s Notes</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Shoushi`s Notes</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/index" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/me" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://localhost:4000/2023/04/01/mysql/%E6%85%A2%E6%9F%A5%E8%AF%A2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Shoushi`s Notes">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">MySQL慢查询</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2023-04-01T17:21:36+08:00">
+                2023-04-01
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="你的哪些SQL慢？看看MySQL慢查询日志吧"><a href="#你的哪些SQL慢？看看MySQL慢查询日志吧" class="headerlink" title="你的哪些SQL慢？看看MySQL慢查询日志吧"></a>你的哪些SQL慢？看看MySQL慢查询日志吧</h1><p><img src="/media/%E6%85%A2%E6%9F%A5%E8%AF%A2/c54e191f715b46f790314f91ee307dd9tplv-k3u1fbpfcp-zoom-crop-mark3024302430241702.awebp" alt="你的哪些SQL慢？看看MySQL慢查询日志吧"></p>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在项目里面，多多少少都隐藏着一些执行比较慢的SQL, 不同的开发测试人员在平时使用的过程中多多少少都能够遇到，但是无法立马有时间去排查解决。那么如果有一个文件能够将这些使用过程中比较慢的SQL记录下来，定期去分析排查，那该多美好啊。这种情况MySQL也替我们想到了，它提供了SQL慢查询的日志，本文就分享下如何使用吧。</p>
+<h2 id="什么是慢查询日志？"><a href="#什么是慢查询日志？" class="headerlink" title="什么是慢查询日志？"></a>什么是慢查询日志？</h2><p>MySQL的慢询日志，提供了记录在MySQL中响应时间超过指定阈值语句的功能，比如设定阈值为3秒，那么任何SQL执行超过3秒都会被记录下来。</p>
+<p>我们借助慢查询日志功能可以发现哪些那些执行时间特别长的询，并且有针对性地进行优化，从而提高系统的整体效率。</p>
+<h2 id="怎么开启慢查询日志？"><a href="#怎么开启慢查询日志？" class="headerlink" title="怎么开启慢查询日志？"></a>怎么开启慢查询日志？</h2><p>默认情况下，MySQL数据库<strong>没有开启</strong>慢查询日志，因为多多少少会带来一定性能的影响。我们可以在开发测试环境、或者生产环境做调优的时候开启，<strong>那怎么查看是否开启了呢？</strong></p>
+<ol>
+<li><strong>查看慢SQL是否开启</strong></li>
+</ol>
+<p>执行下面命令查看是否开启慢SQL</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">show</span> variables <span class="keyword">like</span> <span class="string">&#x27;%slow_query_log&#x27;</span>;</span><br><span class="line">复制代码</span><br></pre></td></tr></table></figure>
+
+<p><img src="/media/%E6%85%A2%E6%9F%A5%E8%AF%A2/d27eadf02574490392490f937b367416tplv-k3u1fbpfcp-zoom-in-crop-mark4536000.awebp" alt="img"></p>
+<ul>
+<li><code>OFF</code>: 未开启</li>
+<li><code>ON</code>: 开启</li>
+</ul>
+<ol>
+<li><strong>如何开启慢查询</strong></li>
+</ol>
+<p>执行下面的命令开启慢查询日志</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"> set global <span class="attr">slow_query_log</span>=<span class="string">&#x27;ON&#x27;</span><span class="comment">;</span></span><br><span class="line">复制代码</span><br></pre></td></tr></table></figure>
+
+<p><img src="/media/%E6%85%A2%E6%9F%A5%E8%AF%A2/25c5256478534072aeaeae967b8a164btplv-k3u1fbpfcp-zoom-in-crop-mark4536000.awebp" alt="img"></p>
+<ol>
+<li><strong>修改慢查询阈值</strong></li>
+</ol>
+<p>前面介绍了SQL执行到达了制定的时间阈值后记录到慢查询日志中，那么如何设置呢？</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">set global <span class="attr">long_query_time</span> = N<span class="comment">;</span></span><br><span class="line"></span><br><span class="line">set <span class="attr">long_query_time</span> = N</span><br><span class="line">复制代码</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>设置global的方式对当前<code>session</code>的<code>long_query_time</code>失效。对新连接的客户端有效。所以可以一并执行下述语句</p>
+</li>
+<li><p>N表示设置的阈值，单位为秒</p>
+</li>
+</ul>
+<p><img src="/media/%E6%85%A2%E6%9F%A5%E8%AF%A2/193484811274457cb7bfc12be950bfe7tplv-k3u1fbpfcp-zoom-in-crop-mark4536000.awebp" alt="img"></p>
+<ul>
+<li>这里的<code>show global variables like &#39;%long_query_time%&#39;;</code>可以查看阈值大小</li>
+</ul>
+<ol>
+<li><strong>如何设置永久生效</strong></li>
+</ol>
+<p>前面是通过命令行的方式设置，如果MySQL重启，那么配置就会重置。我们可以通过修改MySQL的配置<code>my.cfg</code>或者<code>my.ini</code>永久生效。</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[mysqld]</span></span><br><span class="line"><span class="attr">slow_query_log</span>=<span class="literal">ON</span>  <span class="comment"># 开启慢查询日志开关</span></span><br><span class="line"><span class="attr">slow_query_log_file</span>=/var/lib/mysql/alvin-slow.log  <span class="comment"># 慢查询日志的目录和文件名信息</span></span><br><span class="line"><span class="attr">long_query_time</span>=<span class="number">3</span>  <span class="comment"># 设置慢查询的阈值为3秒，超出此设定值的SQL即被记录到慢查询日志</span></span><br><span class="line"><span class="attr">log_output</span>=FILE</span><br><span class="line">复制代码</span><br></pre></td></tr></table></figure>
+
+<h2 id="慢查询日志在哪里呢？"><a href="#慢查询日志在哪里呢？" class="headerlink" title="慢查询日志在哪里呢？"></a>慢查询日志在哪里呢？</h2><p>前面讲解了如何开启MySQL的慢查询日志，那么它把日志记录在哪里了呢?</p>
+<ol>
+<li><strong>查看慢查询日志位置</strong></li>
+</ol>
+<p>通过<code>show variables like &#39;%slow_query_log_file%&#39;;</code>命令可以查看慢SQL文件位置，如下图所示：</p>
+<p><img src="/media/%E6%85%A2%E6%9F%A5%E8%AF%A2/b8cde05cdcac4b069abc4cab2c48e223tplv-k3u1fbpfcp-zoom-in-crop-mark4536000.awebp" alt="img"></p>
+<ol>
+<li><strong>修改慢查询日志位置</strong></li>
+</ol>
+<p>也很简单，执行下面的命令即可：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">set global <span class="attr">slow_query_log_file</span> = <span class="string">&#x27;/usr/local/mysql/data/alvin-slow-slow.log&#x27;</span><span class="comment">;</span></span><br><span class="line">复制代码</span><br></pre></td></tr></table></figure>
+
+<h2 id="怎么查看慢SQL内容？"><a href="#怎么查看慢SQL内容？" class="headerlink" title="怎么查看慢SQL内容？"></a>怎么查看慢SQL内容？</h2><p>现在我们已经知道慢查询日志在哪里了，那么如何查看里面的内容呢？我们这里用一个例子演示下吧。</p>
+<ol>
+<li><strong>执行一个查询的SQL</strong></li>
+</ol>
+<p><img src="/media/%E6%85%A2%E6%9F%A5%E8%AF%A2/ca631d0a573c4afbac3c6c853b74a7aatplv-k3u1fbpfcp-zoom-in-crop-mark4536000.awebp" alt="img"></p>
+<ul>
+<li>执行花了1秒多，超过了前面设置的阈值1s</li>
+</ul>
+<ol>
+<li><strong>查看慢查询数目</strong></li>
+</ol>
+<p>执行下面命令查询当前系统中有多少条慢查询记录</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SHOW</span> <span class="keyword">GLOBAL</span> STATUS <span class="keyword">LIKE</span> <span class="string">&#x27;%Slow_queries%&#x27;</span>;</span><br><span class="line">复制代码</span><br></pre></td></tr></table></figure>
+
+<p><img src="/media/%E6%85%A2%E6%9F%A5%E8%AF%A2/554c1a7baf8c497985dfa3b06849bc50tplv-k3u1fbpfcp-zoom-in-crop-mark4536000.awebp" alt="img"></p>
+<ul>
+<li>value&#x3D;1, 表明刚刚的日志被记录了。</li>
+</ul>
+<ol>
+<li><strong>查看日志内容</strong></li>
+</ol>
+<p>通过<code>cat</code>命令查看文件内容，可以看到对应的慢SQL。</p>
+<p><img src="/media/%E6%85%A2%E6%9F%A5%E8%AF%A2/a054f8b478b24c2c8112ecf49c5e280btplv-k3u1fbpfcp-zoom-in-crop-mark4536000.awebp" alt="img"></p>
+<h3 id="慢查询日志分析工具mysqldumpslow"><a href="#慢查询日志分析工具mysqldumpslow" class="headerlink" title="慢查询日志分析工具mysqldumpslow"></a>慢查询日志分析工具mysqldumpslow</h3><p>果要手工分析日志，查找、分析SQL，显然是个体力活，MySQL提供了日志分析工具 <code>mysqldumpslow</code> 。</p>
+<p><code>mysqldumpslow</code> 命令的具体参数如下：</p>
+<ul>
+<li><p>-a: 不将数字抽象成N，字符串抽象成S</p>
+</li>
+<li><p>-s: 是表示按照何种方式排序：</p>
+</li>
+<li><ul>
+<li>c: 访问次数</li>
+<li>l: 锁定时间</li>
+<li>r: 返回记录</li>
+<li>t: 查询时间</li>
+<li>al:平均锁定时间</li>
+<li>ar:平均返回记录数</li>
+<li>at:平均查询时间 （默认方式）</li>
+<li>ac:平均查询次数</li>
+</ul>
+</li>
+<li><p>-t: 即为返回前面多少条的数据；</p>
+</li>
+<li><p>-g: 后边搭配一个正则匹配模式，大小写不敏感的；</p>
+</li>
+</ul>
+<p>可mysqldumpslow位置mysql的bin目录下，以通过执行 mysqldumpslow –help命令查看使用。</p>
+<p><strong>举例：</strong> 我们想要按照查询时间排序，查看前五条 SQL 语句，这样写即可：</p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mysqldumpslow -s t -t <span class="number">5</span> /usr/<span class="keyword">local</span>/mysql/data/alvin-slow-slow.<span class="built_in">log</span></span><br><span class="line">复制代码</span><br></pre></td></tr></table></figure>
+
+<p><img src="/media/%E6%85%A2%E6%9F%A5%E8%AF%A2/17062293febf4466b0b27e4abcccea76tplv-k3u1fbpfcp-zoom-in-crop-mark4536000.awebp" alt="img"></p>
+<p><strong>常见的用法：</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#得到返回记录集最多的10个SQL</span></span><br><span class="line">mysqldumpslow -s r -t 10 /usr/local/mysql/data/alvin-slow-slow.log</span><br><span class="line"></span><br><span class="line"><span class="comment">#得到访问次数最多的10个SQL</span></span><br><span class="line">mysqldumpslow -s c -t 10 /usr/local/mysql/data/alvin-slow-slow.log</span><br><span class="line"></span><br><span class="line"><span class="comment">#得到按照时间排序的前10条里面含有左连接的查询语句</span></span><br><span class="line">mysqldumpslow -s t -t 10 -g <span class="string">&quot;left join&quot;</span> /usr/local/mysql/data/alvin-slow-slow.log</span><br><span class="line"></span><br><span class="line"><span class="comment">#另外建议在使用这些命令时结合 | 和more 使用 ，否则有可能出现爆屏情况</span></span><br><span class="line">mysqldumpslow -s r -t 10 /usr/local/mysql/data/alvin-slow-slow.log | more</span><br><span class="line">复制代码</span><br></pre></td></tr></table></figure>
+
+<h2 id="怎么删除慢SQL日志？"><a href="#怎么删除慢SQL日志？" class="headerlink" title="怎么删除慢SQL日志？"></a>怎么删除慢SQL日志？</h2><p>现在慢查询日志很多了啊，为了不互相混淆，我要删除一些慢SQL日志，怎么删除呢？</p>
+<ol>
+<li>手动删除慢查询日志文件即可, 也就是<code>rm</code>命令。</li>
+<li>使用命令<code>mysqladmin flush-logs </code>重置慢sql日志内容，完整命令如下 ：</li>
+</ol>
+<figure class="highlight arduino"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysqladmin -uroot -p flush-logs slow</span><br></pre></td></tr></table></figure>
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/mysql/" rel="tag"># mysql</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2023/04/01/mysql/mysql%E8%B7%B3%E8%B7%83%E6%9F%A5%E8%AF%A2%E7%B4%A2%E5%BC%95/" rel="next" title="MySQL 8.0 索引跳跃扫描">
+                <i class="fa fa-chevron-left"></i> MySQL 8.0 索引跳跃扫描
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2023/04/01/mysql/%E9%94%81%E8%AF%A6%E8%A7%A3/" rel="prev" title="MySQL——锁">
+                MySQL——锁 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/index">
+              
+                  <span class="site-state-item-count">14</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/tags.html">
+                  <span class="site-state-item-count">3</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/shoushi" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BD%A0%E7%9A%84%E5%93%AA%E4%BA%9BSQL%E6%85%A2%EF%BC%9F%E7%9C%8B%E7%9C%8BMySQL%E6%85%A2%E6%9F%A5%E8%AF%A2%E6%97%A5%E5%BF%97%E5%90%A7"><span class="nav-number">1.</span> <span class="nav-text">你的哪些SQL慢？看看MySQL慢查询日志吧</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF%E6%85%A2%E6%9F%A5%E8%AF%A2%E6%97%A5%E5%BF%97%EF%BC%9F"><span class="nav-number">1.2.</span> <span class="nav-text">什么是慢查询日志？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%8E%E4%B9%88%E5%BC%80%E5%90%AF%E6%85%A2%E6%9F%A5%E8%AF%A2%E6%97%A5%E5%BF%97%EF%BC%9F"><span class="nav-number">1.3.</span> <span class="nav-text">怎么开启慢查询日志？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%85%A2%E6%9F%A5%E8%AF%A2%E6%97%A5%E5%BF%97%E5%9C%A8%E5%93%AA%E9%87%8C%E5%91%A2%EF%BC%9F"><span class="nav-number">1.4.</span> <span class="nav-text">慢查询日志在哪里呢？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%8E%E4%B9%88%E6%9F%A5%E7%9C%8B%E6%85%A2SQL%E5%86%85%E5%AE%B9%EF%BC%9F"><span class="nav-number">1.5.</span> <span class="nav-text">怎么查看慢SQL内容？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%85%A2%E6%9F%A5%E8%AF%A2%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90%E5%B7%A5%E5%85%B7mysqldumpslow"><span class="nav-number">1.5.1.</span> <span class="nav-text">慢查询日志分析工具mysqldumpslow</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%8E%E4%B9%88%E5%88%A0%E9%99%A4%E6%85%A2SQL%E6%97%A5%E5%BF%97%EF%BC%9F"><span class="nav-number">1.6.</span> <span class="nav-text">怎么删除慢SQL日志？</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">liqun.guan</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

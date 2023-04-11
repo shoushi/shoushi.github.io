@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="mysql," />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Shoushi`s Notes" type="application/atom+xml" />
+
+
+
+
+
+
+<meta name="description" content="MYSQL：order by详解原创 捡田螺的小男孩 捡田螺的小男孩 2021-06-15 07:59 前言日常开发中，我们经常会使用到order by，亲爱的小伙伴，你是否知道order by 的工作原理呢？order by的优化思路是怎样的呢？使用order by有哪些注意的问题呢？本文将跟大家一起来学习，攻克order by~   微信公众号：捡田螺的小男孩  一个使用order by 的简">
+<meta property="og:type" content="article">
+<meta property="og:title" content="orderby 详解">
+<meta property="og:url" content="http://localhost:4000/2023/04/01/mysql/mysql-%E6%8E%92%E5%BA%8F%E8%AF%A6%E8%A7%A3/index.html">
+<meta property="og:site_name" content="Shoushi&#96;s Notes">
+<meta property="og:description" content="MYSQL：order by详解原创 捡田螺的小男孩 捡田螺的小男孩 2021-06-15 07:59 前言日常开发中，我们经常会使用到order by，亲爱的小伙伴，你是否知道order by 的工作原理呢？order by的优化思路是怎样的呢？使用order by有哪些注意的问题呢？本文将跟大家一起来学习，攻克order by~   微信公众号：捡田螺的小男孩  一个使用order by 的简">
+<meta property="og:locale">
+<meta property="og:image" content="http://localhost:4000/.%5Cmedia%5C1.jpg">
+<meta property="og:image" content="http://localhost:4000/.%5Cmedia%5C2.jpg">
+<meta property="og:image" content="http://localhost:4000/.%5Cmedia%5C3.jpg">
+<meta property="og:image" content="http://localhost:4000/.%5Cmedia%5C4.jpg">
+<meta property="og:image" content="http://localhost:4000/.%5Cmedia%5C5.jpg">
+<meta property="og:image" content="http://localhost:4000/.%5Cmedia%5C6.jpg">
+<meta property="og:image" content="https://mmbiz.qpic.cn/mmbiz_png/PoF8jo1Pmpwlj1dDtegxsHWfNCSQev65Gx3PbkcEKH5GOKWnpicr6sVJ1HSEiaJo6xqeUV1X5WRxdFRbfz1DEOow/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1">
+<meta property="og:image" content="https://mmbiz.qpic.cn/mmbiz_png/PoF8jo1Pmpwlj1dDtegxsHWfNCSQev65RZ9YcPAmsEnj3YxNBuVbnp2x0ncg9qzBYlpYWsuUd2eAUEkWDJlaxg/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1">
+<meta property="og:image" content="https://mmbiz.qpic.cn/mmbiz_png/PoF8jo1Pmpwlj1dDtegxsHWfNCSQev65bg60JTICaqju2NMsMSP6vw7cKg8nZbkQJDZQo5ia9oI0XiaklaibunLfQ/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1">
+<meta property="og:image" content="https://mmbiz.qpic.cn/mmbiz_png/PoF8jo1Pmpwlj1dDtegxsHWfNCSQev65KylUcdB0IUG6OGEAK95wnGgkNQO8zr5zibdiawXD08l6REB8qVH3vYCQ/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1">
+<meta property="og:image" content="https://mmbiz.qpic.cn/mmbiz_png/PoF8jo1Pmpwlj1dDtegxsHWfNCSQev65fxGiatHhp7EwQc7SxjSEDiczBWibZj9LIU0McPSJkweje3kIniapXHwccg/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1">
+<meta property="og:image" content="https://mmbiz.qpic.cn/mmbiz_png/PoF8jo1Pmpwlj1dDtegxsHWfNCSQev65icYyQdam0TnJ04EglPRtAlaKqCZEnSla0j9GdbuXAwqjwsEQBKwqrCw/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1">
+<meta property="og:image" content="https://mmbiz.qpic.cn/mmbiz_png/PoF8jo1Pmpwlj1dDtegxsHWfNCSQev65yz6tfzMfpJrIXUhLasHBDdxRm9qRpMlM7Tgo603CHMmoE6c47eN89g/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1">
+<meta property="og:image" content="https://mmbiz.qpic.cn/mmbiz_png/PoF8jo1Pmpwlj1dDtegxsHWfNCSQev65hh5Pu2cIJrytFx1YZicLJcr2NKhSvZV4lJFAocibRBAyLtFlXGq0s9Yw/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1">
+<meta property="og:image" content="https://mmbiz.qpic.cn/mmbiz_png/PoF8jo1Pmpwlj1dDtegxsHWfNCSQev65JtaRBnfVFzSyzI1uIWyyGPKW6wxeiaMJqyqkduCQiaP6QPq1jZxCGFoA/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1">
+<meta property="og:image" content="https://mmbiz.qpic.cn/mmbiz_png/PoF8jo1Pmpwlj1dDtegxsHWfNCSQev65VrmibD2cCNg3v3E87G41k1Dzax3ibEGzKzbNV89aPYnxBIgvaw8Hibndw/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1">
+<meta property="og:image" content="https://mmbiz.qpic.cn/mmbiz_png/PoF8jo1Pmpwlj1dDtegxsHWfNCSQev65UpPoVY8QBJeKXCypp6XxTtmxY5DhwPc2eLfrtFdTL3tUqujToZna2A/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1">
+<meta property="og:image" content="https://mmbiz.qpic.cn/mmbiz_png/PoF8jo1Pmpwlj1dDtegxsHWfNCSQev65mBZzGBAC5xu0PZoPndgHwrV9ELiaibMg07wiaHMc1C9U3suZkOLGniaKnQ/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1">
+<meta property="article:published_time" content="2023-04-01T09:21:36.527Z">
+<meta property="article:modified_time" content="2023-04-01T09:37:22.116Z">
+<meta property="article:author" content="liqun.guan">
+<meta property="article:tag" content="mysql">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://localhost:4000/.%5Cmedia%5C1.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://localhost:4000/2023/04/01/mysql/mysql-排序详解/"/>
+
+
+
+
+
+  <title>orderby 详解 | Shoushi`s Notes</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Shoushi`s Notes</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/index" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/me" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://localhost:4000/2023/04/01/mysql/mysql-%E6%8E%92%E5%BA%8F%E8%AF%A6%E8%A7%A3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Shoushi`s Notes">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">orderby 详解</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2023-04-01T17:21:36+08:00">
+                2023-04-01
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="MYSQL：order-by详解"><a href="#MYSQL：order-by详解" class="headerlink" title="MYSQL：order by详解"></a>MYSQL：order by详解</h1><p>原创 捡田螺的小男孩 <a href="javascript:void(0);">捡田螺的小男孩</a> <em>2021-06-15 07:59</em></p>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a><strong>前言</strong></h2><p>日常开发中，我们经常会使用到order by，亲爱的小伙伴，你是否知道order by 的工作原理呢？order by的优化思路是怎样的呢？使用order by有哪些注意的问题呢？本文将跟大家一起来学习，攻克order by~</p>
+<p><img src="/.%5Cmedia%5C1.jpg" alt="图片"></p>
+<ul>
+<li>微信公众号：<strong>捡田螺的小男孩</strong></li>
+</ul>
+<h2 id="一个使用order-by-的简单例子"><a href="#一个使用order-by-的简单例子" class="headerlink" title="一个使用order by 的简单例子"></a><strong>一个使用order by 的简单例子</strong></h2><p>假设用一张员工表，表结构如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">CREATE TABLE `staff` (</span><br><span class="line">`id` BIGINT ( 11 ) AUTO_INCREMENT COMMENT &#x27;主键id&#x27;,</span><br><span class="line">`id_card` VARCHAR ( 20 ) NOT NULL COMMENT &#x27;身份证号码&#x27;,</span><br><span class="line">`name` VARCHAR ( 64 ) NOT NULL COMMENT &#x27;姓名&#x27;,</span><br><span class="line">`age` INT ( 4 ) NOT NULL COMMENT &#x27;年龄&#x27;,</span><br><span class="line">`city` VARCHAR ( 64 ) NOT NULL COMMENT &#x27;城市&#x27;,</span><br><span class="line">PRIMARY KEY ( `id`),</span><br><span class="line">INDEX idx_city ( `city` )</span><br><span class="line">) ENGINE = INNODB COMMENT &#x27;员工表&#x27;;</span><br></pre></td></tr></table></figure>
+
+<p>表数据如下：</p>
+<p><img src="/.%5Cmedia%5C2.jpg" alt="图片"></p>
+<p>我们现在有这么一个需求：<strong>查询前10个，来自深圳员工的姓名、年龄、城市，并且按照年龄小到大排序</strong>。对应的 SQL 语句就可以这么写：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select name,age,city from staff where city = &#x27;深圳&#x27; order by age limit 10;</span><br></pre></td></tr></table></figure>
+
+<p>这条语句的逻辑很清楚，但是它的<strong>底层执行流程</strong>是怎样的呢？</p>
+<h2 id="order-by-工作原理"><a href="#order-by-工作原理" class="headerlink" title="order by 工作原理"></a><strong>order by 工作原理</strong></h2><p><img src="/.%5Cmedia%5C3.jpg" alt="图片"></p>
+<h3 id="explain-执行计划"><a href="#explain-执行计划" class="headerlink" title="explain 执行计划"></a>explain 执行计划</h3><p>我们先用<strong>Explain</strong>关键字查看一下执行计划</p>
+<p><img src="/.%5Cmedia%5C4.jpg" alt="图片"></p>
+<ul>
+<li>执行计划的<strong>key</strong>这个字段，表示使用到索引idx_city</li>
+<li>Extra 这个字段的 <strong>Using index condition</strong> 表示索引条件</li>
+<li>Extra 这个字段的 <strong>Using filesort</strong>表示用到排序</li>
+</ul>
+<p>我们可以发现，这条SQL使用到了索引，并且也用到排序。那么它是<strong>怎么排序</strong>的呢？</p>
+<h3 id="全字段排序"><a href="#全字段排序" class="headerlink" title="全字段排序"></a>全字段排序</h3><p>MySQL 会给每个查询线程分配一块小<strong>内存</strong>，用于<strong>排序</strong>的，称为 <strong>sort_buffer</strong>。什么时候把字段放进去排序呢，其实是通过<code>idx_city</code>索引找到对应的数据，才把数据放进去啦。</p>
+<p>我们回顾下索引是怎么找到匹配的数据的，现在先把索引树画出来吧，<strong>idx_city</strong>索引树如下：</p>
+<p><img src="/.%5Cmedia%5C5.jpg" alt="图片"></p>
+<p>idx_city索引树，叶子节点存储的是<strong>主键id</strong>。还有一棵id主键聚族索引树，我们再画出聚族索引树图吧：</p>
+<p><img src="/.%5Cmedia%5C6.jpg" alt="图片"></p>
+<p><strong>我们的查询语句是怎么找到匹配数据的呢</strong>？先通过<strong>idx_city</strong>索引树，找到对应的主键id，然后再通过拿到的主键id，搜索<strong>id主键索引树</strong>，找到对应的行数据。</p>
+<p>加上<strong>order by</strong>之后，整体的执行流程就是：</p>
+<ol>
+<li>MySQL 为对应的线程初始化<strong>sort_buffer</strong>，放入需要查询的name、age、city字段；</li>
+<li>从<strong>索引树idx_city</strong>， 找到第一个满足 city&#x3D;’深圳’条件的主键 id，也就是图中的id&#x3D;9；</li>
+<li>到<strong>主键 id 索引树</strong>拿到id&#x3D;9的这一行数据， 取name、age、city三个字段的值，存到sort_buffer；</li>
+<li>从<strong>索引树idx_city</strong> 拿到下一个记录的主键 id，即图中的id&#x3D;13；</li>
+<li>重复步骤 3、4 直到<strong>city的值不等于深圳</strong>为止；</li>
+<li>前面5步已经查找到了所有<strong>city为深圳</strong>的数据，在 sort_buffer中，将所有数据根据age进行排序；</li>
+<li>按照排序结果取前10行返回给客户端。</li>
+</ol>
+<p>执行示意图如下：</p>
+<p><img src="https://mmbiz.qpic.cn/mmbiz_png/PoF8jo1Pmpwlj1dDtegxsHWfNCSQev65Gx3PbkcEKH5GOKWnpicr6sVJ1HSEiaJo6xqeUV1X5WRxdFRbfz1DEOow/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1" alt="图片"></p>
+<p>将查询所需的字段全部读取到sort_buffer中，就是<strong>全字段排序</strong>。这里面，有些小伙伴可能会有个疑问,把查询的所有字段都放到sort_buffer，而sort_buffer是一块内存来的，如果数据量太大，sort_buffer放不下怎么办呢？</p>
+<h3 id="磁盘临时文件辅助排序"><a href="#磁盘临时文件辅助排序" class="headerlink" title="磁盘临时文件辅助排序"></a>磁盘临时文件辅助排序</h3><p>实际上，sort_buffer的大小是由一个参数控制的：<strong>sort_buffer_size</strong>。如果要排序的数据小于sort_buffer_size，排序在<strong>sort_buffer</strong> 内存中完成，如果要排序的数据大于sort_buffer_size，则<strong>借助磁盘文件来进行排序</strong></p>
+<p>如何确定是否使用了磁盘文件来进行排序呢？可以使用以下这几个命令</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">## 打开optimizer_trace，开启统计</span><br><span class="line">set optimizer_trace = &quot;enabled=on&quot;;</span><br><span class="line">## 执行SQL语句</span><br><span class="line">select name,age,city from staff where city = &#x27;深圳&#x27; order by age limit 10;</span><br><span class="line">## 查询输出的统计信息</span><br><span class="line">select * from information_schema.optimizer_trace </span><br></pre></td></tr></table></figure>
+
+<p>可以从 <strong>number_of_tmp_files</strong> 中看出，是否使用了临时文件。</p>
+<p><img src="https://mmbiz.qpic.cn/mmbiz_png/PoF8jo1Pmpwlj1dDtegxsHWfNCSQev65RZ9YcPAmsEnj3YxNBuVbnp2x0ncg9qzBYlpYWsuUd2eAUEkWDJlaxg/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1" alt="图片"></p>
+<p><strong>number_of_tmp_files</strong> 表示使用来排序的磁盘临时文件数。如果number_of_tmp_files&gt;0，则表示使用了磁盘文件来进行排序。</p>
+<p>使用了磁盘临时文件，整个排序过程又是怎样的呢？</p>
+<ol>
+<li>从<strong>主键Id索引树</strong>，拿到需要的数据，并放到<strong>sort_buffer内存</strong>块中。当sort_buffer快要满时，就对sort_buffer中的数据排序，排完后，把数据临时放到磁盘一个小文件中。</li>
+<li>继续回到主键 id 索引树取数据，继续放到sort_buffer内存中，排序后，也把这些数据写入到磁盘临时小文件中。</li>
+<li>继续循环，直到取出所有满足条件的数据。最后把磁盘的临时排好序的小文件，合并成一个有序的大文件。</li>
+</ol>
+<p><strong>TPS:</strong> 借助磁盘临时小文件排序，实际上使用的是<strong>归并排序</strong>算法。</p>
+<p>小伙伴们可能会有个疑问，既然<strong>sort_buffer</strong>放不下，就需要用到临时磁盘文件，这会影响排序效率。那为什么还要把排序不相关的字段（name，city）放到sort_buffer中呢？只放排序相关的age字段，它<strong>不香</strong>吗？可以了解下<strong>rowid 排序</strong>。</p>
+<h3 id="rowid-排序"><a href="#rowid-排序" class="headerlink" title="rowid 排序"></a>rowid 排序</h3><p>rowid 排序就是，只把查询SQL<strong>需要用于排序的字段和主键id</strong>，放到sort_buffer中。那怎么确定走的是全字段排序还是rowid 排序排序呢？</p>
+<p>实际上有个参数控制的。这个参数就是<strong>max_length_for_sort_data</strong>，它表示MySQL用于排序行数据的长度的一个参数，如果单行的长度超过这个值，MySQL 就认为单行太大，就换rowid 排序。我们可以通过命令看下这个参数取值。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">show variables like &#x27;max_length_for_sort_data&#x27;;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://mmbiz.qpic.cn/mmbiz_png/PoF8jo1Pmpwlj1dDtegxsHWfNCSQev65bg60JTICaqju2NMsMSP6vw7cKg8nZbkQJDZQo5ia9oI0XiaklaibunLfQ/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1" alt="图片"></p>
+<p><strong>max_length_for_sort_data</strong> 默认值是1024。因为本文示例中name,age,city长度&#x3D;64+4+64 &#x3D;132 &lt; 1024, 所以走的是全字段排序。我们来改下这个参数，改小一点，</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">## 修改排序数据最大单行长度为32</span><br><span class="line">set max_length_for_sort_data = 32;</span><br><span class="line">## 执行查询SQL</span><br><span class="line">select name,age,city from staff where city = &#x27;深圳&#x27; order by age limit 10;</span><br></pre></td></tr></table></figure>
+
+<p>使用rowid 排序的话，整个SQL执行流程又是怎样的呢？</p>
+<ol>
+<li>MySQL 为对应的线程初始化<strong>sort_buffer</strong>，放入需要排序的age字段，以及主键id；</li>
+<li>从<strong>索引树idx_city</strong>， 找到第一个满足 city&#x3D;’深圳’条件的主键 id，也就是图中的id&#x3D;9；</li>
+<li>到<strong>主键 id 索引树</strong>拿到id&#x3D;9的这一行数据， 取age和主键id的值，存到sort_buffer；</li>
+<li>从<strong>索引树idx_city</strong> 拿到下一个记录的主键 id，即图中的id&#x3D;13；</li>
+<li>重复步骤 3、4 直到<strong>city的值不等于深圳</strong>为止；</li>
+<li>前面5步已经查找到了所有city为深圳的数据，在 <strong>sort_buffer</strong>中，将所有数据根据age进行排序；</li>
+<li>遍历排序结果，取前10行，并按照 id 的值<strong>回到原表</strong>中，取出city、name 和 age 三个字段返回给客户端。</li>
+</ol>
+<p>执行示意图如下：</p>
+<p><img src="https://mmbiz.qpic.cn/mmbiz_png/PoF8jo1Pmpwlj1dDtegxsHWfNCSQev65KylUcdB0IUG6OGEAK95wnGgkNQO8zr5zibdiawXD08l6REB8qVH3vYCQ/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1" alt="图片"></p>
+<p>对比一下<strong>全字段排序</strong>的流程，rowid 排序多了一次<strong>回表</strong>。</p>
+<blockquote>
+<p>★</p>
+<p>什么是回表？拿到主键再回到主键索引查询的过程，就叫做回表</p>
+<p>”</p>
+</blockquote>
+<p>我们通过<strong>optimizer_trace</strong>，可以看到是否使用了rowid排序的：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">## 打开optimizer_trace，开启统计</span><br><span class="line">set optimizer_trace = &quot;enabled=on&quot;;</span><br><span class="line">## 执行SQL语句</span><br><span class="line">select name,age,city from staff where city = &#x27;深圳&#x27; order by age limit 10;</span><br><span class="line">## 查询输出的统计信息</span><br><span class="line">select * from information_schema.optimizer_trace </span><br></pre></td></tr></table></figure>
+
+<p><img src="https://mmbiz.qpic.cn/mmbiz_png/PoF8jo1Pmpwlj1dDtegxsHWfNCSQev65fxGiatHhp7EwQc7SxjSEDiczBWibZj9LIU0McPSJkweje3kIniapXHwccg/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1" alt="图片"></p>
+<h3 id="全字段排序与rowid排序对比"><a href="#全字段排序与rowid排序对比" class="headerlink" title="全字段排序与rowid排序对比"></a>全字段排序与rowid排序对比</h3><ul>
+<li>全字段排序：sort_buffer内存不够的话，就需要用到磁盘临时文件，造成<strong>磁盘访问</strong>。</li>
+<li>rowid排序：sort_buffer可以放更多数据，但是需要再回到原表去取数据，比全字段排序多一次<strong>回表</strong>。</li>
+</ul>
+<p>一般情况下，对于InnoDB存储引擎，会优先使<strong>用全字段</strong>排序。可以发现 <strong>max_length_for_sort_data</strong> 参数设置为1024，这个数比较大的。一般情况下，排序字段不会超过这个值，也就是都会走<strong>全字段</strong>排序。</p>
+<h2 id="order-by的一些优化思路"><a href="#order-by的一些优化思路" class="headerlink" title="order by的一些优化思路"></a><strong>order by的一些优化思路</strong></h2><p>我们如何优化order by语句呢？</p>
+<ul>
+<li>因为数据是无序的，所以就需要排序。如果数据本身是有序的，那就不用排了。而索引数据本身是有序的，我们通过建立<strong>联合索引</strong>，优化order by 语句。</li>
+<li>我们还可以通过调整<strong>max_length_for_sort_data</strong>等参数优化；</li>
+</ul>
+<h3 id="联合索引优化"><a href="#联合索引优化" class="headerlink" title="联合索引优化"></a>联合索引优化</h3><p>再回顾下示例SQL的查询计划</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">explain select name,age,city from staff where city = &#x27;深圳&#x27; order by age limit 10;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://mmbiz.qpic.cn/mmbiz_png/PoF8jo1Pmpwlj1dDtegxsHWfNCSQev65icYyQdam0TnJ04EglPRtAlaKqCZEnSla0j9GdbuXAwqjwsEQBKwqrCw/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1" alt="图片"></p>
+<p>我们给查询条件<code>city</code>和排序字段<code>age</code>，加个联合索引<strong>idx_city_age</strong>。再去查看执行计划</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">alter table staff add  index idx_city_age(city,age);</span><br><span class="line">explain select name,age,city from staff where city = &#x27;深圳&#x27; order by age limit 10;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://mmbiz.qpic.cn/mmbiz_png/PoF8jo1Pmpwlj1dDtegxsHWfNCSQev65yz6tfzMfpJrIXUhLasHBDdxRm9qRpMlM7Tgo603CHMmoE6c47eN89g/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1" alt="图片"></p>
+<p>可以发现，加上<strong>idx_city_age</strong>联合索引，就不需要<strong>Using filesort</strong>排序了。为什么呢？因为<strong>索引本身是有序的</strong>，我们可以看下<strong>idx_city_age</strong>联合索引示意图，如下：</p>
+<p><img src="https://mmbiz.qpic.cn/mmbiz_png/PoF8jo1Pmpwlj1dDtegxsHWfNCSQev65hh5Pu2cIJrytFx1YZicLJcr2NKhSvZV4lJFAocibRBAyLtFlXGq0s9Yw/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1" alt="图片"></p>
+<p>整个SQL执行流程变成酱紫：</p>
+<ol>
+<li>从索引idx_city_age找到满足<strong>city&#x3D;’深圳’</strong> 的主键 id</li>
+<li>到<strong>主键 id索引</strong>取出整行，拿到 name、city、age 三个字段的值，作为结果集的一部分直接返回</li>
+<li>从索引<strong>idx_city_age</strong>取下一个记录主键id</li>
+<li>重复步骤 2、3，直到查到<strong>第10条</strong>记录，或者是<strong>不满足city&#x3D;’深圳’</strong> 条件时循环结束。</li>
+</ol>
+<p>流程示意图如下：</p>
+<p><img src="https://mmbiz.qpic.cn/mmbiz_png/PoF8jo1Pmpwlj1dDtegxsHWfNCSQev65JtaRBnfVFzSyzI1uIWyyGPKW6wxeiaMJqyqkduCQiaP6QPq1jZxCGFoA/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1" alt="图片"></p>
+<p>从示意图看来，还是有一次<strong>回表</strong>操作。针对本次示例，有没有更高效的方案呢？有的，可以使用<strong>覆盖索引</strong>：</p>
+<blockquote>
+<p>★</p>
+<p>覆盖索引：在查询的数据列里面，不需要回表去查，直接从索引列就能取到想要的结果。换句话说，你SQL用到的索引列数据，覆盖了查询结果的列，就算上覆盖索引了。</p>
+<p>”</p>
+</blockquote>
+<p>我们给city，name，age 组成一个联合索引，即可用到了覆盖索引，这时候SQL执行时，连回表操作都可以省去啦。</p>
+<h3 id="调整参数优化"><a href="#调整参数优化" class="headerlink" title="调整参数优化"></a>调整参数优化</h3><p>我们还可以通过调整参数，去优化order by的执行。比如可以调整sort_buffer_size的值。因为sort_buffer值太小，数据量大的话，会借助磁盘临时文件排序。如果MySQL服务器配置高的话，可以使用稍微调整大点。</p>
+<p>我们还可以调整max_length_for_sort_data的值，这个值太小的话，order by会走rowid排序，会回表，降低查询性能。所以max_length_for_sort_data可以适当大一点。</p>
+<p>当然，很多时候，这些MySQL参数值，我们直接采用默认值就可以了。</p>
+<h2 id="使用order-by-的一些注意点"><a href="#使用order-by-的一些注意点" class="headerlink" title="使用order by 的一些注意点"></a><strong>使用order by 的一些注意点</strong></h2><h3 id="没有where条件，order-by字段需要加索引吗"><a href="#没有where条件，order-by字段需要加索引吗" class="headerlink" title="没有where条件，order by字段需要加索引吗"></a>没有where条件，order by字段需要加索引吗</h3><p>日常开发过程中，我们可能会遇到没有where条件的order by，那么，这时候order by后面的字段是否需要加索引呢。如有这么一个SQL，create_time是否需要加索引：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select * from A order by create_time;</span><br></pre></td></tr></table></figure>
+
+<p>无条件查询的话，即使create_time上有索引,也不会使用到。因为MySQL优化器认为走普通二级索引，再去回表成本比全表扫描排序更高。所以选择走全表扫描,然后根据全字段排序或者rowid排序来进行。</p>
+<p>如果查询SQL修改一下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select * from A order by create_time limit m;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>无条件查询,如果m值较小,是可以走索引的.因为MySQL优化器认为，根据索引有序性去回表查数据,然后得到m条数据,就可以终止循环,那么成本比全表扫描小,则选择走二级索引。</li>
+</ul>
+<h3 id="分页limit过大时，会导致大量排序怎么办"><a href="#分页limit过大时，会导致大量排序怎么办" class="headerlink" title="分页limit过大时，会导致大量排序怎么办?"></a>分页limit过大时，会导致大量排序怎么办?</h3><p>假设SQL如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select * from A order by a limit 100000,10</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>可以记录上一页最后的id，下一页查询时，查询条件带上id，如：where id &gt; 上一页最后id limit 10。</li>
+<li>也可以在业务允许的情况下，限制页数。</li>
+</ul>
+<h3 id="索引存储顺序与order-by不一致，如何优化？"><a href="#索引存储顺序与order-by不一致，如何优化？" class="headerlink" title="索引存储顺序与order by不一致，如何优化？"></a>索引存储顺序与order by不一致，如何优化？</h3><p>假设有联合索引 idx_age_name, 我们需求修改为这样：<strong>查询前10个员工的姓名、年龄，并且按照年龄小到大排序，如果年龄相同，则按姓名降序排</strong>。对应的 SQL 语句就可以这么写：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select name,age from staff  order by age ,name desc limit 10;</span><br></pre></td></tr></table></figure>
+
+<p>我们看下执行计划，发现使用到<strong>Using filesort</strong>。</p>
+<p><img src="https://mmbiz.qpic.cn/mmbiz_png/PoF8jo1Pmpwlj1dDtegxsHWfNCSQev65VrmibD2cCNg3v3E87G41k1Dzax3ibEGzKzbNV89aPYnxBIgvaw8Hibndw/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1" alt="图片"></p>
+<p>这是因为，idx_age_name索引树中，age从小到大排序，如果<strong>age相同，再按name从小到大排序</strong>。而order by 中，是按age从小到大排序，如果<strong>age相同，再按name从大到小排序</strong>。也就是说，索引存储顺序与order by不一致。</p>
+<p>我们怎么优化呢？如果MySQL是8.0版本，支持<strong>Descending Indexes</strong>，可以这样修改索引：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">CREATE TABLE `staff` (</span><br><span class="line">  `id` bigint(11) NOT NULL AUTO_INCREMENT COMMENT &#x27;主键id&#x27;,</span><br><span class="line">  `id_card` varchar(20) NOT NULL COMMENT &#x27;身份证号码&#x27;,</span><br><span class="line">  `name` varchar(64) NOT NULL COMMENT &#x27;姓名&#x27;,</span><br><span class="line">  `age` int(4) NOT NULL COMMENT &#x27;年龄&#x27;,</span><br><span class="line">  `city` varchar(64) NOT NULL COMMENT &#x27;城市&#x27;,</span><br><span class="line">  PRIMARY KEY (`id`),</span><br><span class="line">  KEY `idx_age_name` (`age`,`name` desc) USING BTREE</span><br><span class="line">) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8 COMMENT=&#x27;员工表&#x27;;</span><br></pre></td></tr></table></figure>
+
+<h3 id="使用了in条件多个属性时，SQL执行是否有排序过程"><a href="#使用了in条件多个属性时，SQL执行是否有排序过程" class="headerlink" title="使用了in条件多个属性时，SQL执行是否有排序过程"></a>使用了in条件多个属性时，SQL执行是否有排序过程</h3><p>如果我们有<strong>联合索引idx_city_name</strong>，执行这个SQL的话，是不会走排序过程的，如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select * from staff where city in (&#x27;深圳&#x27;) order by age limit 10;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://mmbiz.qpic.cn/mmbiz_png/PoF8jo1Pmpwlj1dDtegxsHWfNCSQev65UpPoVY8QBJeKXCypp6XxTtmxY5DhwPc2eLfrtFdTL3tUqujToZna2A/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1" alt="图片"></p>
+<p>但是，如果使用in条件，并且有多个条件时，就会有排序过程。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">explain select * from staff where city in (&#x27;深圳&#x27;,&#x27;上海&#x27;) order by age limit 10;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://mmbiz.qpic.cn/mmbiz_png/PoF8jo1Pmpwlj1dDtegxsHWfNCSQev65mBZzGBAC5xu0PZoPndgHwrV9ELiaibMg07wiaHMc1C9U3suZkOLGniaKnQ/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1" alt="图片"></p>
+<p>这是因为:in有两个条件，在满足深圳时，age是排好序的，但是把满足上海的age也加进来，就不能保证满足所有的age都是排好序的。因此需要Using filesort。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/mysql/" rel="tag"># mysql</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2023/04/01/mysql/mysql%E5%A4%A7%E5%B0%8F%E5%86%99%E6%95%8F%E6%84%9F/" rel="next" title="mysql大小写敏感">
+                <i class="fa fa-chevron-left"></i> mysql大小写敏感
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2023/04/01/mysql/mysql%E8%B7%B3%E8%B7%83%E6%9F%A5%E8%AF%A2%E7%B4%A2%E5%BC%95/" rel="prev" title="MySQL 8.0 索引跳跃扫描">
+                MySQL 8.0 索引跳跃扫描 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/index">
+              
+                  <span class="site-state-item-count">14</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/tags.html">
+                  <span class="site-state-item-count">3</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/shoushi" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#MYSQL%EF%BC%9Aorder-by%E8%AF%A6%E8%A7%A3"><span class="nav-number">1.</span> <span class="nav-text">MYSQL：order by详解</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E4%B8%AA%E4%BD%BF%E7%94%A8order-by-%E7%9A%84%E7%AE%80%E5%8D%95%E4%BE%8B%E5%AD%90"><span class="nav-number">1.2.</span> <span class="nav-text">一个使用order by 的简单例子</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#order-by-%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86"><span class="nav-number">1.3.</span> <span class="nav-text">order by 工作原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#explain-%E6%89%A7%E8%A1%8C%E8%AE%A1%E5%88%92"><span class="nav-number">1.3.1.</span> <span class="nav-text">explain 执行计划</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%A8%E5%AD%97%E6%AE%B5%E6%8E%92%E5%BA%8F"><span class="nav-number">1.3.2.</span> <span class="nav-text">全字段排序</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A3%81%E7%9B%98%E4%B8%B4%E6%97%B6%E6%96%87%E4%BB%B6%E8%BE%85%E5%8A%A9%E6%8E%92%E5%BA%8F"><span class="nav-number">1.3.3.</span> <span class="nav-text">磁盘临时文件辅助排序</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#rowid-%E6%8E%92%E5%BA%8F"><span class="nav-number">1.3.4.</span> <span class="nav-text">rowid 排序</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%A8%E5%AD%97%E6%AE%B5%E6%8E%92%E5%BA%8F%E4%B8%8Erowid%E6%8E%92%E5%BA%8F%E5%AF%B9%E6%AF%94"><span class="nav-number">1.3.5.</span> <span class="nav-text">全字段排序与rowid排序对比</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#order-by%E7%9A%84%E4%B8%80%E4%BA%9B%E4%BC%98%E5%8C%96%E6%80%9D%E8%B7%AF"><span class="nav-number">1.4.</span> <span class="nav-text">order by的一些优化思路</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%81%94%E5%90%88%E7%B4%A2%E5%BC%95%E4%BC%98%E5%8C%96"><span class="nav-number">1.4.1.</span> <span class="nav-text">联合索引优化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B0%83%E6%95%B4%E5%8F%82%E6%95%B0%E4%BC%98%E5%8C%96"><span class="nav-number">1.4.2.</span> <span class="nav-text">调整参数优化</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8order-by-%E7%9A%84%E4%B8%80%E4%BA%9B%E6%B3%A8%E6%84%8F%E7%82%B9"><span class="nav-number">1.5.</span> <span class="nav-text">使用order by 的一些注意点</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B2%A1%E6%9C%89where%E6%9D%A1%E4%BB%B6%EF%BC%8Corder-by%E5%AD%97%E6%AE%B5%E9%9C%80%E8%A6%81%E5%8A%A0%E7%B4%A2%E5%BC%95%E5%90%97"><span class="nav-number">1.5.1.</span> <span class="nav-text">没有where条件，order by字段需要加索引吗</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%86%E9%A1%B5limit%E8%BF%87%E5%A4%A7%E6%97%B6%EF%BC%8C%E4%BC%9A%E5%AF%BC%E8%87%B4%E5%A4%A7%E9%87%8F%E6%8E%92%E5%BA%8F%E6%80%8E%E4%B9%88%E5%8A%9E"><span class="nav-number">1.5.2.</span> <span class="nav-text">分页limit过大时，会导致大量排序怎么办?</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%B4%A2%E5%BC%95%E5%AD%98%E5%82%A8%E9%A1%BA%E5%BA%8F%E4%B8%8Eorder-by%E4%B8%8D%E4%B8%80%E8%87%B4%EF%BC%8C%E5%A6%82%E4%BD%95%E4%BC%98%E5%8C%96%EF%BC%9F"><span class="nav-number">1.5.3.</span> <span class="nav-text">索引存储顺序与order by不一致，如何优化？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E4%BA%86in%E6%9D%A1%E4%BB%B6%E5%A4%9A%E4%B8%AA%E5%B1%9E%E6%80%A7%E6%97%B6%EF%BC%8CSQL%E6%89%A7%E8%A1%8C%E6%98%AF%E5%90%A6%E6%9C%89%E6%8E%92%E5%BA%8F%E8%BF%87%E7%A8%8B"><span class="nav-number">1.5.4.</span> <span class="nav-text">使用了in条件多个属性时，SQL执行是否有排序过程</span></a></li></ol></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">liqun.guan</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
