@@ -2,6 +2,15 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://localhost:4000/2023/04/01/mysql/explain%E8%AF%A6%E8%A7%A3/</loc>
+    
+    <lastmod>2023-04-12</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
     <loc>http://localhost:4000/2023/04/12/java/G1/</loc>
     
     <lastmod>2023-04-12</lastmod>
@@ -75,15 +84,6 @@
   
   <url>
     <loc>http://localhost:4000/2023/04/01/mysql/mysql%20%E9%94%81/</loc>
-    
-    <lastmod>2023-04-01</lastmod>
-    
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
-    <loc>http://localhost:4000/2023/04/01/mysql/explain%E8%AF%A6%E8%A7%A3/</loc>
     
     <lastmod>2023-04-01</lastmod>
     
