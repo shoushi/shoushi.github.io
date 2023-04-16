@@ -99,7 +99,7 @@
 <meta property="og:image" content="http://localhost:4000/.%5Cf%5Cmedia%5C%E7%8E%B0%E8%B1%A1%E6%B6%88%E5%A4%B1.png">
 <meta property="og:image" content="http://localhost:4000/.%5Cf%5Cmedia%5C%E4%B8%A4%E6%AC%A1%E6%89%A7%E8%A1%8C%E6%97%A5%E5%BF%97.png">
 <meta property="article:published_time" content="2023-03-30T15:06:20.884Z">
-<meta property="article:modified_time" content="2023-04-16T13:12:38.458Z">
+<meta property="article:modified_time" content="2023-04-16T13:14:37.320Z">
 <meta property="article:author" content="liqun.guan">
 <meta property="article:tag" content="Quartz">
 <meta name="twitter:card" content="summary">
@@ -380,7 +380,7 @@
 <h1 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h1><p>​	quartz执行定时任务原理是通过quartz是通过调度线程QuartzSchedulerThread不断的扫描数据库中的数据来获取到那些已经到点要触发的任务，然后调度执行。</p>
 <p>​	数据库配置两条一样的trigger_name时，会导致qrtz_cron_triggers表这条定时任务不停的删除，新增。当出库单定时任务在一分钟执行时，已经生成jobBean放到线程池中执行，与此同时，timerConfigTask也执行，将此条定时任务删除并新增，且这条新的数据，会被调度线程再次拉取出来，生成jobBean丢到线程池中执行，导致一个定时任务出现两次。</p>
 <p>负责任务调度的几个线程：<br> （1）任务执行线程：通常使用一个线程池(SimpleThreadPool)维护一组线程，负责实际每个job的执行。<br> （2）Scheduler调度线程QuartzSchedulerThread ：轮询存储的所有 trigger，如果有需要触发的 trigger，即到达了下一次触发的时间，则从任务执行线程池获取一个空闲线程，执行与该 trigger 关联的任务。<br> （3）处理misfire job的线程MisfireHandler：轮训所有misfire的trigger，原理就是从数据库中查询所有下次触发时间小于当前时间的trigger，按照每个trigger设定的misfire策略处理这些trigger。</p>
-<h1 id="解决办法"><a href="#解决办法" class="headerlink" title="解决办法"></a>解决办法</h1><p>删除多余配置</p>
+<h1 id="解决办法"><a href="#解决办法" class="headerlink" title="解决办法"></a>解决办法</h1><p>删除多余配置 </p>
 
       
     </div>
