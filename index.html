@@ -253,6 +253,302 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://localhost:4000/2023/04/16/java/%E8%A7%A3%E5%86%B3drools%E4%BD%BF%E7%94%A8%E4%B8%8D%E5%BD%93%E5%AF%BC%E8%87%B4%E7%9A%84oom/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Shoushi`s Notes">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2023/04/16/java/%E8%A7%A3%E5%86%B3drools%E4%BD%BF%E7%94%A8%E4%B8%8D%E5%BD%93%E5%AF%BC%E8%87%B4%E7%9A%84oom/" itemprop="url">未命名</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2023-04-16T20:20:50+08:00">
+                2023-04-16
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <hr>
+<h2 id="title-记一次Drool使用不当导致的OOM异常tag-项目实战"><a href="#title-记一次Drool使用不当导致的OOM异常tag-项目实战" class="headerlink" title="title:记一次Drool使用不当导致的OOM异常tag:项目实战"></a>title:记一次Drool使用不当导致的OOM异常<br>tag:项目实战</h2><h1 id="记一次Drool使用不当导致的OOM异常"><a href="#记一次Drool使用不当导致的OOM异常" class="headerlink" title="记一次Drool使用不当导致的OOM异常"></a>记一次Drool使用不当导致的OOM异常</h1><h3 id="问题："><a href="#问题：" class="headerlink" title="问题："></a>问题：</h3><p>​		李宁项目属于两个服务进行集群部署，在25号时候，66，67两个ip都出现tomcat假死现象，组件日志均有打印，接口无法访问，定时任务不跑。</p>
+<h3 id="问题分析："><a href="#问题分析：" class="headerlink" title="问题分析："></a>问题分析：</h3><h5 id="分析一："><a href="#分析一：" class="headerlink" title="分析一："></a>分析一：</h5><p>​		当时认为假死是程序中有死锁或者死循环之类的问题导致，但是无依据，遂让实施拉取25号的66ip的dump文件，（67的为了线上继续运行，先重启解决）。</p>
+<p>​		拉取到dump文件后，先使用jdk自带的<strong>jvisualvm</strong>进行分析，看到发生了oom，报错信息如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">&quot;ARTEMIS_TASK_CLUSTER_SCHEDULER_Worker-15&quot;</span> prio=<span class="number">5</span> tid=<span class="number">100</span> RUNNABLE</span><br><span class="line">    at java.lang.OutOfMemoryError.&lt;init&gt;(OutOfMemoryError.java:<span class="number">48</span>)</span><br><span class="line">    at java.util.Arrays.copyOf(Arrays.java:<span class="number">3332</span>)</span><br><span class="line">       Local Variable: <span class="type">char</span>[]#<span class="number">1570195</span></span><br><span class="line">    at java.lang.AbstractStringBuilder.ensureCapacityInternal(AbstractStringBuilder.java:<span class="number">124</span>)</span><br><span class="line">    at java.lang.AbstractStringBuilder.append(AbstractStringBuilder.java:<span class="number">448</span>)</span><br><span class="line">       Local Variable: java.lang.String#<span class="number">1563273</span></span><br><span class="line">    at java.lang.StringBuffer.append(StringBuffer.java:<span class="number">270</span>)</span><br><span class="line">    at java.text.MessageFormat.subformat(MessageFormat.java:<span class="number">1335</span>)</span><br><span class="line">       Local Variable: java.lang.StringBuffer#<span class="number">4</span></span><br><span class="line">       Local Variable: java.text.MessageFormat#<span class="number">3</span></span><br><span class="line">    at java.text.MessageFormat.format(MessageFormat.java:<span class="number">865</span>)</span><br><span class="line">    at java.text.Format.format(Format.java:<span class="number">157</span>)</span><br><span class="line">    at java.text.MessageFormat.format(MessageFormat.java:<span class="number">841</span>)</span><br><span class="line">    at org.quartz.impl.jdbcjobstore.Util.rtp(Util.java:<span class="number">68</span>)</span><br><span class="line">    at org.quartz.impl.jdbcjobstore.StdJDBCDelegate.rtp(StdJDBCDelegate.java:<span class="number">3029</span>)</span><br><span class="line">    at org.quartz.impl.jdbcjobstore.StdJDBCDelegate.updateTriggerStatesForJobFromOtherState(StdJDBCDelegate.java:<span class="number">1513</span>)</span><br><span class="line">       Local Variable: java.lang.String#<span class="number">616911</span></span><br><span class="line">       Local Variable: org.quartz.JobKey#<span class="number">2</span></span><br><span class="line">       Local Variable: java.lang.String#<span class="number">622049</span></span><br><span class="line">    at org.quartz.impl.jdbcjobstore.JobStoreSupport.triggeredJobComplete(JobStoreSupport.java:<span class="number">3103</span>)</span><br><span class="line">       Local Variable: org.quartz.impl.triggers.CronTriggerImpl#<span class="number">3</span></span><br><span class="line">       Local Variable: org.quartz.impl.JobDetailImpl#<span class="number">2</span></span><br><span class="line">    at org.quartz.impl.jdbcjobstore.JobStoreSupport$<span class="number">45.</span>executeVoid(JobStoreSupport.java:<span class="number">3055</span>)</span><br><span class="line">    at org.quartz.impl.jdbcjobstore.JobStoreSupport$VoidTransactionCallback.execute(JobStoreSupport.java:<span class="number">3715</span>)</span><br><span class="line">    at org.quartz.impl.jdbcjobstore.JobStoreSupport$VoidTransactionCallback.execute(JobStoreSupport.java:<span class="number">3713</span>)</span><br><span class="line">    at org.quartz.impl.jdbcjobstore.JobStoreSupport.executeInNonManagedTXLock(JobStoreSupport.java:<span class="number">3799</span>)</span><br><span class="line">       Local Variable: com.sun.proxy.$Proxy1251#<span class="number">1</span></span><br><span class="line">    at org.quartz.impl.jdbcjobstore.JobStoreSupport.retryExecuteInNonManagedTXLock(JobStoreSupport.java:<span class="number">3754</span>)</span><br><span class="line">       Local Variable: java.lang.String#<span class="number">621730</span></span><br><span class="line">       Local Variable: org.springframework.scheduling.quartz.LocalDataSourceJobStore#<span class="number">1</span></span><br><span class="line">       Local Variable: org.quartz.impl.jdbcjobstore.JobStoreSupport$<span class="number">45</span>#<span class="number">1</span></span><br><span class="line">    at org.quartz.impl.jdbcjobstore.JobStoreSupport.triggeredJobComplete(JobStoreSupport.java:<span class="number">3051</span>)</span><br><span class="line">    at org.quartz.core.QuartzScheduler.notifyJobStoreJobComplete(QuartzScheduler.java:<span class="number">1804</span>)</span><br><span class="line">    at org.quartz.core.JobRunShell.run(JobRunShell.java:<span class="number">269</span>)</span><br><span class="line">       Local Variable: org.quartz.core.JobRunShell#<span class="number">2</span></span><br></pre></td></tr></table></figure>
+
+<p>经过查看代码分析，此处就是一个简单的quartz集群的查询字符串，不可能过大导致内存溢出，排除。</p>
+<h5 id="分析二："><a href="#分析二：" class="headerlink" title="分析二："></a>分析二：</h5><p>​		经过jvisualvm查看，确实存在较大的内存占用，但是不直观，具体不明，查资料得知一个很强大👍的工具<strong>MAT</strong>。</p>
+<p>​		MAT依赖于jdk11，此外需要修改MemoryAnalyzer.ini文件，指定jdk路径以及加大内存。</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">-startup</span><br><span class="line">plugins/org.eclipse.equinox.launcher_1.6.400.v20210924-0641.jar</span><br><span class="line">-vm</span><br><span class="line">C:\Program Files\Java\jdk-11\bin\javaw.exe</span><br><span class="line">--launcher.library</span><br><span class="line">plugins/org.eclipse.equinox.launcher.win32.win32.x86_64_1.2.400.v20211117-0650</span><br><span class="line">-vmargs</span><br><span class="line">-Xmx4g</span><br></pre></td></tr></table></figure>
+
+<p>​		1.将dump文件导入MAT，分析得到饼状图，看到有一个占据这3.1GB的大对象存活</p>
+<img src="media/解决drools使用不当导致的oom/image-20230307132550052.png" alt="image-20230307132550052" style="zoom: 50%;" />
+
+<p>​		2. 点击查看Dominator Tree，查看大对象<img src="/media/%E8%A7%A3%E5%86%B3drools%E4%BD%BF%E7%94%A8%E4%B8%8D%E5%BD%93%E5%AF%BC%E8%87%B4%E7%9A%84oom/image-20230307132715519.png" alt="image-20230307132715519"></p>
+<ol start="3">
+<li><p>查看定位到大对象是和drools相关的statefulSeesions,属于kieBaseMap内置的一个HashSet.</p>
+<p><img src="/media/%E8%A7%A3%E5%86%B3drools%E4%BD%BF%E7%94%A8%E4%B8%8D%E5%BD%93%E5%AF%BC%E8%87%B4%E7%9A%84oom/image-20230307133023685.png" alt="image-20230307133023685"></p>
+</li>
+<li><p>大对象定位到后进行代码分析</p>
+<p>drools有状态会话时，必须调用dispose()方法，以确保没有内存泄漏。代码中相关dispose的调用在执行规则后调用，当kieSession.fireAllRules();出错时，即规则代码出错时，会抛异常跳出当前方法而导致跳过dispose（）方法的调用，发生内存泄露。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">helperList</span><span class="params">(String key, List&lt;Object&gt; gList)</span> <span class="keyword">throws</span> ClassNotFoundException &#123;</span><br><span class="line">        <span class="type">KieSession</span> <span class="variable">kieSession</span> <span class="operator">=</span> getSession(key);</span><br><span class="line">        kieSession.setGlobal(GLOB_LIST, gList);</span><br><span class="line">        kieSessionSetGlobalServiceList(key,kieSession);</span><br><span class="line">        kieSession.fireAllRules();</span><br><span class="line">        kieSession.dispose();</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>验证，若出现大量的异常，则会在外层被catch住进行日志输出。</p>
+</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> List&lt;Object&gt; <span class="title function_">droolsHelperListByKey</span><span class="params">(String key, Object... objects)</span> &#123;</span><br><span class="line">        List&lt;Object&gt; gList = <span class="keyword">new</span> <span class="title class_">LinkedList</span>&lt;&gt;();</span><br><span class="line">        gList.addAll(Arrays.asList(objects));</span><br><span class="line">        <span class="keyword">if</span> (StringUtil.isEmpty(key) || CollectionUtil.isEmpty(kieBaseMap) || CollectionUtil.isEmpty(ruleMap)) &#123;</span><br><span class="line">            logger.warn(<span class="string">&quot;droolsHelperListByKey drools getRule is empty key:[&#123;&#125;]&quot;</span>, key);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                helperList(key, gList);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">                logger.error(<span class="string">&quot;droolsHelperListByKey error :&quot;</span>, e);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> gList;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>日志搜索：</p>
+<p><img src="/media/%E8%A7%A3%E5%86%B3drools%E4%BD%BF%E7%94%A8%E4%B8%8D%E5%BD%93%E5%AF%BC%E8%87%B4%E7%9A%84oom/image-20230307133559960.png" alt="image-20230307133559960"></p>
+<p>至此，分析结束。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>对于资源类的数据，务必要保证资源的释放操作。</p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://localhost:4000/2023/04/16/java/volitile%E8%AF%A6%E8%A7%A3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Shoushi`s Notes">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2023/04/16/java/volitile%E8%AF%A6%E8%A7%A3/" itemprop="url">Volatile 详解</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2023-04-16T20:19:06+08:00">
+                2023-04-16
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h1 id="Java中Volatile关键字详解"><a href="#Java中Volatile关键字详解" class="headerlink" title="Java中Volatile关键字详解"></a>Java中Volatile关键字详解</h1><h2 id="一、基本概念"><a href="#一、基本概念" class="headerlink" title="一、基本概念"></a><strong>一、基本概念</strong></h2><hr>
+<h3 id="先补充一下概念：Java-内存模型中的可见性、原子性和有序性。"><a href="#先补充一下概念：Java-内存模型中的可见性、原子性和有序性。" class="headerlink" title="先补充一下概念：Java 内存模型中的可见性、原子性和有序性。"></a><strong>先补充一下概念：Java 内存模型中的可见性、原子性和有序性。</strong></h3><p><strong>可见性：</strong></p>
+<p>　　可见性是一种复杂的属性，因为可见性中的错误总是会违背我们的直觉。通常，我们无法确保执行读操作的线程能适时地看到其他线程写入的值，有时甚至是根本不可能的事情。为了确保多个线程之间对内存写入操作的可见性，必须使用同步机制。</p>
+<p>　　<strong>可见性，是指线程之间的可见性，一个线程修改的状态对另一个线程是可见的。</strong>也就是一个线程修改的结果。另一个线程马上就能看到。比如：用volatile修饰的变量，就会具有可见性。volatile修饰的变量不允许线程内部缓存和重排序，即直接修改内存。所以对其他线程是可见的。但是这里需要注意一个问题，volatile只能让被他修饰内容具有可见性，但不能保证它具有原子性。比如 volatile int a &#x3D; 0；之后有一个操作 a++；这个变量a具有可见性，但是a++ 依然是一个非原子操作，也就是这个操作同样存在线程安全问题。</p>
+<p>　　在 Java 中 volatile、synchronized 和 final 实现可见性。</p>
+<p><strong>原子性：</strong></p>
+<p>　　<strong>原子是世界上的最小单位，具有不可分割性。</strong>比如 a&#x3D;0；（a非long和double类型） 这个操作是不可分割的，那么我们说这个操作时原子操作。再比如：a++； 这个操作实际是a &#x3D; a + 1；是可分割的，所以他不是一个原子操作。非原子操作都会存在线程安全问题，需要我们使用同步技术（sychronized）来让它变成一个原子操作。一个操作是原子操作，那么我们称它具有原子性。java的concurrent包下提供了一些原子类，我们可以通过阅读API来了解这些原子类的用法。比如：AtomicInteger、AtomicLong、AtomicReference等。</p>
+<p>　　在 Java 中 synchronized 和在 lock、unlock 中操作保证原子性。</p>
+<p><strong>有序性：</strong></p>
+<p>　　Java 语言提供了 volatile 和 synchronized 两个关键字来保证线程之间操作的有序性，volatile 是因为其本身包含“禁止指令重排序”的语义，synchronized 是由“一个变量在同一个时刻只允许一条线程对其进行 lock 操作”这条规则获得的，此规则决定了持有同一个对象锁的两个同步块只能串行执行。</p>
+<p><strong>下面内容摘录自《Java Concurrency in Practice》：</strong></p>
+<p>　　下面一段代码在多线程环境下，将存在问题。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"> 1 /**</span><br><span class="line"> 2  * @author zhengbinMac</span><br><span class="line"> 3  */</span><br><span class="line"> 4 public class NoVisibility &#123;</span><br><span class="line"> 5     private static boolean ready;</span><br><span class="line"> 6     private static int number;</span><br><span class="line"> 7     private static class ReaderThread extends Thread &#123;</span><br><span class="line"> 8         @Override</span><br><span class="line"> 9         public void run() &#123;</span><br><span class="line">10             while(!ready) &#123;</span><br><span class="line">11                 Thread.yield();</span><br><span class="line">12             &#125;</span><br><span class="line">13             System.out.println(number);</span><br><span class="line">14         &#125;</span><br><span class="line">15     &#125;</span><br><span class="line">16     public static void main(String[] args) &#123;</span><br><span class="line">17         new ReaderThread().start();</span><br><span class="line">18         number = 42;</span><br><span class="line">19         ready = true;</span><br><span class="line">20     &#125;</span><br><span class="line">21 &#125;</span><br></pre></td></tr></table></figure>
+
+<p>　　NoVisibility可能会持续循环下去，因为读线程可能永远都看不到ready的值。甚至NoVisibility可能会输出0，因为读线程可能看到了写入ready的值，但却没有看到之后写入number的值，这种现象被称为“重排序”。只要在某个线程中无法检测到重排序情况（即使在其他线程中可以明显地看到该线程中的重排序），那么就无法确保线程中的操作将按照程序中指定的顺序来执行。当主线程首先写入number，然后在没有同步的情况下写入ready，那么读线程看到的顺序可能与写入的顺序完全相反。</p>
+<p>　　在没有同步的情况下，编译器、处理器以及运行时等都可能对操作的执行顺序进行一些意想不到的调整。在缺乏足够同步的多线程程序中，要想对内存操作的执行春旭进行判断，无法得到正确的结论。</p>
+<p>　　这个看上去像是一个失败的设计，但却能使JVM充分地利用现代多核处理器的强大性能。例如，在缺少同步的情况下，Java内存模型允许编译器对操作顺序进行重排序，并将数值缓存在寄存器中。此外，它还允许CPU对操作顺序进行重排序，并将数值缓存在处理器特定的缓存中。</p>
+<h2 id="二、Volatile原理"><a href="#二、Volatile原理" class="headerlink" title="二、Volatile原理"></a>二、Volatile原理</h2><hr>
+<p>　　Java语言提供了一种稍弱的同步机制，即volatile变量，用来确保将变量的更新操作通知到其他线程。当把变量声明为volatile类型后，编译器与运行时都会注意到这个变量是共享的，因此不会将该变量上的操作与其他内存操作一起重排序。volatile变量不会被缓存在寄存器或者对其他处理器不可见的地方，因此在读取volatile类型的变量时总会返回最新写入的值。</p>
+<p>　　在访问volatile变量时不会执行加锁操作，因此也就不会使执行线程阻塞，因此volatile变量是一种比sychronized关键字更轻量级的同步机制。</p>
+<p><img src="/media/volitile%E8%AF%A6%E8%A7%A3/731716-20160708224602686-2141387366.png" alt="img"></p>
+<p>　　当对非 volatile 变量进行读写的时候，每个线程先从内存拷贝变量到CPU缓存中。如果计算机有多个CPU，每个线程可能在不同的CPU上被处理，这意味着每个线程可以拷贝到不同的 CPU cache 中。</p>
+<p>　　而声明变量是 volatile 的，JVM 保证了每次读变量都从内存中读，跳过 CPU cache 这一步。</p>
+<h3 id="当一个变量定义为-volatile-之后，将具备两种特性："><a href="#当一个变量定义为-volatile-之后，将具备两种特性：" class="headerlink" title="当一个变量定义为 volatile 之后，将具备两种特性："></a>当一个变量定义为 volatile 之后，将具备两种特性：</h3><p>　　1.保证此变量对所有的线程的可见性，这里的“可见性”，如本文开头所述，当一个线程修改了这个变量的值，volatile 保证了新值能立即同步到主内存，以及每次使用前立即从主内存刷新。但普通变量做不到这点，普通变量的值在线程间传递均需要通过主内存（详见：<a target="_blank" rel="noopener" href="http://www.cnblogs.com/zhengbin/p/6407137.html">Java内存模型</a>）来完成。</p>
+<p>　　2.禁止指令重排序优化。有volatile修饰的变量，赋值后多执行了一个“load addl $0x0, (%esp)”操作，这个操作相当于一个<strong>内存屏障</strong>（指令重排序时不能把后面的指令重排序到内存屏障之前的位置），只有一个CPU访问内存时，并不需要内存屏障；（什么是指令重排序：是指CPU采用了允许将多条指令不按程序规定的顺序分开发送给各相应电路单元处理）。</p>
+<h3 id="volatile-性能："><a href="#volatile-性能：" class="headerlink" title="volatile 性能："></a>volatile 性能：</h3><p>　　volatile 的读性能消耗与普通变量几乎相同，但是写操作稍慢，因为它需要在本地代码中插入许多内存屏障指令来保证处理器不发生乱序执行。</p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://localhost:4000/2023/04/12/java/G1/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -2737,460 +3033,6 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://localhost:4000/2023/04/01/mysql/explain%E8%AF%A6%E8%A7%A3/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Shoushi`s Notes">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2023/04/01/mysql/explain%E8%AF%A6%E8%A7%A3/" itemprop="url">explain详解</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2023-04-01T17:21:36+08:00">
-                2023-04-01
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h2 id="一、简介："><a href="#一、简介：" class="headerlink" title="一、简介："></a>一、简介：</h2><p><strong>1.含义</strong></p>
-<p>Explain可以模拟优化器执行SQL查询语句，从而知道MySQL是如何处理你的SQL语句的，分析所查询的语句或者表结构的性能瓶颈。</p>
-<p><strong>2.作用</strong></p>
-<p>能够获取以下信息：</p>
-<ul>
-<li>表的读取顺序</li>
-<li>哪些索引可以使用</li>
-<li>数据读取操作的操作类型</li>
-<li>哪些索引被实际使用</li>
-<li>表之间的引用</li>
-<li>每张表有多少行被物理查询</li>
-<li><strong>SQL语句性能分析</strong></li>
-</ul>
-<p><strong>3.如何使用</strong></p>
-<p>Explain+SQL语句</p>
-<p>运行结果字段：</p>
-<p><img src="/media%5Cv2-5d33487e208ea34c92370efcdcc55a1e_1440w.png" alt="img">Explain包含字段</p>
-<h2 id="二、字段解释："><a href="#二、字段解释：" class="headerlink" title="二、字段解释："></a>二、字段解释：</h2><p><strong>1.id–执行顺序</strong></p>
-<p>select查询的序列号,包含一组数字，表示查询中执行select子句或操作表的顺序。</p>
-<p>★<strong>注意</strong>：id号每个号码，表示一趟独立的查询。<strong>一个sql 的查询趟数越少越好。</strong></p>
-<p><img src="/media%5Cv2-a061744a09bbf25b10035fc0e954c0e5_1440w.jpg" alt="img"></p>
-<p><strong>2.select_type–查询类型</strong></p>
-<p>★<strong>注意： DEPENDENT SUBQUERY</strong></p>
-<ul>
-<li>会严重消耗性能</li>
-<li>不会进行子查询，会先进行外部查询,生成结果集,再在内部进行关联查询</li>
-<li>子查询的执行效率受制于外层查询的记录数</li>
-<li>可以尝试改成join查询</li>
-</ul>
-<p><img src="/media%5Cv2-a7035dd17f951bb6dc4b21f7d81d8137_1440w.jpg" alt="img"></p>
-<p><strong>3.table–正在访问哪个表</strong></p>
-<p><strong>4.partitions–匹配的分区</strong></p>
-<p><strong>5.type–访问类型</strong></p>
-<p>结果值从最好到最坏依次是：</p>
-<p><strong>system &gt; const &gt; eq_ref &gt; ref</strong> &gt; fulltext &gt; ref_or_null &gt; index_merge &gt; unique_subquery &gt; index_subquery <strong>&gt; range &gt; index &gt; ALL</strong></p>
-<p>★<strong>注意：</strong>一般来说，得保证查询<strong>至少达到range级别，最好能达到ref</strong>。</p>
-<p><img src="/media%5Cv2-279f40b0b73278ea55719f86e5c31219_1440w.jpg" alt="img"></p>
-<p><strong>6.possible_keys–可能使用的索引</strong></p>
-<p>显示可能应用在这张表中的索引，一个或多个。</p>
-<p>查询涉及到的字段上若存在索引，则该索引将被列出，但不一定被查询实际使用。</p>
-<p><strong>7.key–实际使用的索引</strong></p>
-<p>实际使用的索引。如果为NULL，则没有使用索引；查询中若使用了覆盖索引，则该索引和查询的select字段重叠。</p>
-<p><strong>8.key_len–索引中使用的字节数</strong></p>
-<p>可通过该列计算查询中使用的索引的长度。 key_len字段能够帮你检查是否充分的利用上了索引。</p>
-<p>如何计算？</p>
-<ol>
-<li>先看索引上字段的类型+长度比如 int&#x3D;4 ; varchar(20) &#x3D;20 ; char(20) &#x3D;20</li>
-<li>如果是varchar或者char这种字符串字段，视字符集要乘不同的值，比如utf-8 要乘3，GBK要乘2</li>
-<li>varchar这种动态字符串要加2个字节</li>
-<li>允许为空的字段要加1个字节</li>
-</ol>
-<p>例子：</p>
-<p><img src="/media%5Cv2-399c7a3c702585e52a2557244d8f1c1f_1440w.jpg" alt="img"></p>
-<p><strong>9.ref–显示索引中被使用的列</strong></p>
-<p>显示索引的哪一列被使用了，如果可能的话，是一个常数。哪些列或常量被用于查找索引列上的值。</p>
-<p><strong>10.rows–必须检查的行数</strong></p>
-<p><strong>11.filtered–过滤比例</strong></p>
-<p>表示存储引擎返回的数据<strong>在server层过滤后，剩下多少满足查询的记录数量的比例</strong>，注意是百分比，不是具体记录数</p>
-<p><strong>12.Extra</strong></p>
-<p><img src="/media%5Cv2-2bb309a8663a404785be5507832ec92f_1440w.jpg" alt="img"></p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://localhost:4000/2023/04/01/mysql/%E6%95%B0%E6%8D%AE%E5%BA%93%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%20/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Shoushi`s Notes">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2023/04/01/mysql/%E6%95%B0%E6%8D%AE%E5%BA%93%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%20/" itemprop="url">MySQL的可重复读级别能解决幻读吗</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2023-04-01T17:21:05+08:00">
-                2023-04-01
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h1 id="MySQL的可重复读级别能解决幻读吗"><a href="#MySQL的可重复读级别能解决幻读吗" class="headerlink" title="MySQL的可重复读级别能解决幻读吗"></a>MySQL的可重复读级别能解决幻读吗</h1><h3 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h3><p>之前在深入了解数据库理论的时候，了解到事务的不同隔离级别可能存在的问题。为了更好的理解所以在MySQL数据库中测试复现这些问题。关于脏读和不可重复读在相应的隔离级别下都很容易的复现了。但是对于幻读，我发现在可重复读的隔离级别下没有出现，当时想到难道是MySQL对幻读做了什么处理？</p>
-<p>测试：</p>
-<p>创建一张测试用的表dept：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> `dept` (</span><br><span class="line">  `id` <span class="type">int</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span> AUTO_INCREMENT,</span><br><span class="line">  `name` <span class="type">varchar</span>(<span class="number">20</span>) <span class="keyword">DEFAULT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  <span class="keyword">PRIMARY</span> KEY (`id`)</span><br><span class="line">) ENGINE<span class="operator">=</span>InnoDB AUTO_INCREMENT<span class="operator">=</span><span class="number">12</span> <span class="keyword">DEFAULT</span> CHARSET<span class="operator">=</span>utf8</span><br><span class="line"></span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> dept(name) <span class="keyword">values</span>(&quot;后勤部&quot;)</span><br><span class="line">复制代码</span><br></pre></td></tr></table></figure>
-
-<table>
-<thead>
-<tr>
-<th>事务 1</th>
-<th>事务 2</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>begin</td>
-<td>begin</td>
-</tr>
-<tr>
-<td>select * from dept</td>
-<td></td>
-</tr>
-<tr>
-<td>-</td>
-<td>insert into dept(name) values(“研发部”)</td>
-</tr>
-<tr>
-<td>-</td>
-<td>commit</td>
-</tr>
-<tr>
-<td>select * from dept</td>
-<td></td>
-</tr>
-<tr>
-<td>commit</td>
-<td></td>
-</tr>
-</tbody></table>
-<p>根据上面的流程执行，预期来说应该是事务1的第一条select查询出一条数据，第二个select查询出两条数据(包含事务2提交的数据)。</p>
-<p>但是在实际测试中发现第二条select实际上也只查询处理一条数据。这是但是根据数据库理论的可重复读的实现(排他锁和共享锁)这是不应该的情况。</p>
-<p>在了解实际原因前我们先复习下事务的相关理论。</p>
-<h3 id="数据库原理理论"><a href="#数据库原理理论" class="headerlink" title="数据库原理理论"></a>数据库原理理论</h3><h4 id="事务"><a href="#事务" class="headerlink" title="事务"></a>事务</h4><p>事务(Transaction)，一般是指要做的或所做的事情。在计算机术语中是指访问并可能更新数据库中各种数据项的一个程序执行单元(unit)。事务由事务开始(begin transaction)和事务结束(end transaction)之间执行的全体操作组成。在关系数据库中，一个事务可以是一组SQL语句或整个程序。</p>
-<h4 id="为什么要有事务"><a href="#为什么要有事务" class="headerlink" title="为什么要有事务"></a>为什么要有事务</h4><p>一个数据库事务通常包含对数据库进行读或写的一个操作序列。它的存在包含有以下两个目的：</p>
-<ol>
-<li>为数据库操作提供了一个从失败中恢复到正常状态的方法，同时提供了数据库在异常状态下仍能保持一致性的方法。</li>
-<li>当多个应用程序在并发访问数据库时，可以在这些应用程序之间提供一个隔离方法，保证彼此的操作互相干扰。</li>
-</ol>
-<h4 id="事务特性"><a href="#事务特性" class="headerlink" title="事务特性"></a>事务特性</h4><p>事务具有4个特性：原子性、一致性、隔离性、持久性。这四个属性通常称为 ACID 特性。</p>
-<ul>
-<li>原子性（atomicity）： 一个事务应该是一个不可分割的工作单位，事务中包括的操作要么都成功，要么都不成功。</li>
-<li>一致性（consistency）： 事务必须是使数据库从一个一致性状态变到另一个一致性状态。一致性与原子性是密切相关的。</li>
-<li>隔离性（isolation）： 一个事务的执行不能被其他事务干扰。即一个事务内部的操作及使用的数据在事务未提交前对并发的其他事务是隔离的，并发执行的各个事务之间不能互相影响。</li>
-<li>持久性（durability）： 一个事务一旦成功提交，它对数据库中数据的改变就应该是永久性的。接下来的其他操作或故障不应该对其有任何影响。</li>
-</ul>
-<p>事务之间的几个特性并不是一组同等的概念：</p>
-<p>如果在任何时刻都只有一个事务，那么其天然是具有隔离性的，这时只要保证原子性就能具有一致性。</p>
-<p>如果存在并发的情况下，就需要保证原子性和隔离性才能保证一致性。</p>
-<h4 id="数据库并发事务中存在的问题"><a href="#数据库并发事务中存在的问题" class="headerlink" title="数据库并发事务中存在的问题"></a>数据库并发事务中存在的问题</h4><p>如果不考虑事务的隔离性，会发生以下几种问题：</p>
-<ul>
-<li>脏读：脏读是指在一个事务处理过程里读取了另一个未提交的事务中的数据。当一个事务正在多次修改某个数据，而在这个事务中这多次的修改都还未提交，这时一个并发的事务来访问该数据，就会造成两个事务得到的数据不一致。</li>
-<li>不可重复读：不可重复读是指在对于数据库中的某条数据，一个事务范围内多次查询返回不同的数据值(这里不同是指某一条或多条数据的内容前后不一致，但数据条数相同)，这是由于在查询间隔，该事务需要用到的数据被另一个事务修改并提交了。不可重复读和脏读的区别是，脏读是某一事务读取了另一个事务未提交的脏数据，而不可重复读则是读取了其他事务提交的数据。需要注意的是在某些情况下不可重复读并不是问题。</li>
-<li>幻读：幻读是事务非独立执行时发生的一种现象。例如事务T1对一个表中所有的行的某个数据项做了从“1”修改为“2”的操作，这时事务T2又对这个表中插入了一行数据项，而这个数据项的数值还是为“1”并且提交给数据库。而操作事务T1的用户如果再查看刚刚修改的数据，会发现还有一行没有修改，其实这行是从事务T2中添加的，就好像产生幻觉一样，这就是发生了幻读。幻读和不可重复读都是读取了另一条已经提交的事务(这点就脏读不同)，所不同的是不可重复读可能发生在update,delete操作中，而幻读发生在insert操作中。</li>
-</ul>
-<h4 id="排他锁，共享锁"><a href="#排他锁，共享锁" class="headerlink" title="排他锁，共享锁"></a>排他锁，共享锁</h4><p>排它锁（Exclusive），又称为X 锁，写锁。</p>
-<p>共享锁（Shared），又称为S 锁，读锁。</p>
-<p>读写锁之间有以下的关系：</p>
-<ul>
-<li>一个事务对数据对象O加了 S 锁，可以对 O进行读取操作，但是不能进行更新操作。加锁期间其它事务能对O 加 S 锁，但是不能加 X 锁。</li>
-<li>一个事务对数据对象 O 加了 X 锁，就可以对 O 进行读取和更新。加锁期间其它事务不能对 O 加任何锁。</li>
-</ul>
-<p>即读写锁之间的关系可以概括为：多读单写</p>
-<h4 id="事务的隔离级别"><a href="#事务的隔离级别" class="headerlink" title="事务的隔离级别"></a>事务的隔离级别</h4><p>在事务中存在以下几种隔离级别：</p>
-<ul>
-<li>读未提交(Read Uncommitted)：解决更新丢失问题。如果一个事务已经开始写操作，那么其他事务则不允许同时进行写操作，但允许其他事务读此行数据。该隔离级别可以通过“排他写锁”实现，即事务需要对某些数据进行修改必须对这些数据加 X 锁，读数据不需要加 S 锁。</li>
-<li>读已提交(Read Committed)：解决了脏读问题。读取数据的事务允许其他事务继续访问该行数据，但是未提交的写事务将会禁止其他事务访问该行。这可以通过“瞬间共享读锁”和“排他写锁”实现， 即事务需要对某些数据进行修改必须对这些数据加 X 锁，读数据时需要加上 S 锁，当数据读取完成后立刻释放 S 锁，不用等到事务结束。</li>
-<li>可重复读取(Repeatable Read)：禁止不可重复读取和脏读取，但是有时可能出现幻读数据。读取数据的事务将会禁止写事务(但允许读事务)，写事务则禁止任何其他事务。Mysql默认使用该隔离级别。这可以通过“共享读锁”和“排他写锁”实现，即事务需要对某些数据进行修改必须对这些数据加 X 锁，读数据时需要加上 S 锁，当数据读取完成并不立刻释放 S 锁，而是等到事务结束后再释放。</li>
-<li>串行化(Serializable)：解决了幻读的问题的。提供严格的事务隔离。它要求事务序列化执行，事务只能一个接着一个地执行，不能并发执行。仅仅通过“行级锁”是无法实现事务序列化的，必须通过其他机制保证新插入的数据不会被刚执行查询操作的事务访问到。</li>
-</ul>
-<h3 id="MySQL中的隔离级别的实现"><a href="#MySQL中的隔离级别的实现" class="headerlink" title="MySQL中的隔离级别的实现"></a>MySQL中的隔离级别的实现</h3><p>上面的内容解释了一些数据库理论的概念，但是在MySQL、ORACLE这样的数据库中，为了性能的考虑并不是完全按照上面介绍的理论来实现的。</p>
-<h4 id="MVCC"><a href="#MVCC" class="headerlink" title="MVCC"></a>MVCC</h4><p>多版本并发控制(Multi-Version Concurrency Control, MVCC)是MySQL中基于乐观锁理论实现隔离级别的方式，用于实现读已提交和可重复读取隔离级别的实现。</p>
-<h5 id="实现-隔离级别为可重复读"><a href="#实现-隔离级别为可重复读" class="headerlink" title="实现(隔离级别为可重复读)"></a>实现(隔离级别为可重复读)</h5><p>在说到如何实现前先引入两个概念：</p>
-<blockquote>
-<p>系统版本号：一个递增的数字，每开始一个新的事务，系统版本号就会自动递增。</p>
-</blockquote>
-<blockquote>
-<p>事务版本号：事务开始时的系统版本号。</p>
-</blockquote>
-<p>在MySQL中，会在表中每一条数据后面添加两个字段：</p>
-<p>创建版本号：创建一行数据时，将当前系统版本号作为创建版本号赋值</p>
-<p>删除版本号：删除一行数据时，将当前系统版本号作为删除版本号赋值</p>
-<h5 id="SELECT"><a href="#SELECT" class="headerlink" title="SELECT"></a>SELECT</h5><p>select时读取数据的规则为：创建版本号&lt;&#x3D;当前事务版本号，删除版本号为空或&gt;当前事务版本号。</p>
-<p>创建版本号&lt;&#x3D;当前事务版本号保证取出的数据不会有后启动的事务中创建的数据。这也是为什么在开始的示例中我们不会查出后来添加的数据的原因</p>
-<p>删除版本号为空或&gt;当前事务版本号保证了至少在该事务开启之前数据没有被删除，是应该被查出来的数据。</p>
-<h5 id="INSERT"><a href="#INSERT" class="headerlink" title="INSERT"></a>INSERT</h5><p>insert时将当前的系统版本号赋值给创建版本号字段。</p>
-<h5 id="UPDATE"><a href="#UPDATE" class="headerlink" title="UPDATE"></a>UPDATE</h5><p>插入一条新纪录，保存当前事务版本号为行创建版本号，同时保存当前事务版本号到原来删除的行，实际上这里的更新是通过delete和insert实现的。</p>
-<h5 id="DELETE"><a href="#DELETE" class="headerlink" title="DELETE"></a>DELETE</h5><p>删除时将当前的系统版本号赋值给删除版本号字段，标识该行数据在那一个事务中会被删除，即使实际上在位commit时该数据没有被删除。根据select的规则后开启懂数据也不会查询到该数据。</p>
-<h4 id="MVCC真的解决了幻读？"><a href="#MVCC真的解决了幻读？" class="headerlink" title="MVCC真的解决了幻读？"></a>MVCC真的解决了幻读？</h4><p>从最开始我们的测试示例和上面的理论支持来看貌似在MySQL中通过MVCC就解决了幻读的问题，那既然这样串行化读貌似就没啥意义了，带着疑问继续测试。</p>
-<p>测试前数据：</p>
-<p><img src="/media/%E6%95%B0%E6%8D%AE%E5%BA%93%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/16993816f09c6135tplv-t2oaga2asx-zoom-in-crop-mark4536000-16803406085273.awebp" alt="测试前数据"></p>
-<table>
-<thead>
-<tr>
-<th>事务 1</th>
-<th>事务 2</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>begin</td>
-<td>begin</td>
-</tr>
-<tr>
-<td>select * from dept</td>
-<td></td>
-</tr>
-<tr>
-<td>-</td>
-<td>insert into dept(name) values(“研发部”)</td>
-</tr>
-<tr>
-<td>-</td>
-<td>commit</td>
-</tr>
-<tr>
-<td>update dept set name&#x3D;”财务部”(工作中如果不想被辞退一定要写where条件)</td>
-<td></td>
-</tr>
-<tr>
-<td>commit</td>
-<td></td>
-</tr>
-</tbody></table>
-<p>根据上面的结果我们期望的结果是这样的：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">id</span>  name</span><br><span class="line">1   财务部</span><br><span class="line">2   研发部</span><br><span class="line">复制代码</span><br></pre></td></tr></table></figure>
-
-<p>但是实际上我们的经过是：</p>
-<p><img src="/media/%E6%95%B0%E6%8D%AE%E5%BA%93%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/16993816f0a588dctplv-t2oaga2asx-zoom-in-crop-mark4536000-16803406085274.awebp" alt="测试后数据"></p>
-<p>本来我们希望得到的结果只是第一条数据的部门改为财务，但是结果确实两条数据都被修改了。这种结果告诉我们其实在MySQL可重复读的隔离级别中并不是完全解决了幻读的问题，而是解决了读数据情况下的幻读问题。而对于修改的操作依旧存在幻读问题，就是说MVCC对于幻读的解决时不彻底的。</p>
-<h4 id="快照读和当前读"><a href="#快照读和当前读" class="headerlink" title="快照读和当前读"></a>快照读和当前读</h4><p>出现了上面的情况我们需要知道为什么会出现这种情况。在查阅了一些资料后发现在RR级别中，通过MVCC机制，虽然让数据变得可重复读，但我们读到的数据可能是历史数据，不是数据库最新的数据。这种读取历史数据的方式，我们叫它快照读 (snapshot read)，而读取数据库最新版本数据的方式，叫当前读 (current read)。</p>
-<h5 id="select-快照读"><a href="#select-快照读" class="headerlink" title="select 快照读"></a>select 快照读</h5><p>当执行select操作是innodb默认会执行快照读，会记录下这次select后的结果，之后select 的时候就会返回这次快照的数据，即使其他事务提交了不会影响当前select的数据，这就实现了可重复读了。快照的生成当在第一次执行select的时候，也就是说假设当A开启了事务，然后没有执行任何操作，这时候B insert了一条数据然后commit,这时候A执行 select，那么返回的数据中就会有B添加的那条数据。之后无论再有其他事务commit都没有关系，因为快照已经生成了，后面的select都是根据快照来的。</p>
-<h5 id="当前读"><a href="#当前读" class="headerlink" title="当前读"></a>当前读</h5><p>对于会对数据修改的操作(update、insert、delete)都是采用当前读的模式。在执行这几个操作时会读取最新的记录，即使是别的事务提交的数据也可以查询到。假设要update一条记录，但是在另一个事务中已经delete掉这条数据并且commit了，如果update就会产生冲突，所以在update的时候需要知道最新的数据。也正是因为这样所以才导致上面我们测试的那种情况。</p>
-<p>select的当前读需要手动的加锁：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> <span class="keyword">table</span> <span class="keyword">where</span> ? lock <span class="keyword">in</span> share mode;</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> <span class="keyword">table</span> <span class="keyword">where</span> ? <span class="keyword">for</span> <span class="keyword">update</span>;</span><br><span class="line">复制代码</span><br></pre></td></tr></table></figure>
-
-<h4 id="有个问题说明下"><a href="#有个问题说明下" class="headerlink" title="有个问题说明下"></a>有个问题说明下</h4><p>在测试过程中最开始我以为使用<code>begin</code>语句就是开始一个事务了，所以在上面第二次测试中因为先开始的事务1，结果在事务1中却查到了事务2新增的数据，当时认为这和前面MVCC中的select的规则不一致了，所以做了如下测试：</p>
-<p><img src="/media/%E6%95%B0%E6%8D%AE%E5%BA%93%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/16993816f0b117ddtplv-t2oaga2asx-zoom-in-crop-mark4536000-16803406085275.awebp" alt="image"></p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> information_schema.INNODB_TRX <span class="operator">/</span><span class="operator">/</span>用于查询当前正在执行中的事务</span><br><span class="line">复制代码</span><br></pre></td></tr></table></figure>
-
-<p>可以看到如果只是执行<code>begin</code>语句实际上并没有开启一个事务。</p>
-<p>下面在<code>begin</code>后添加一条select语句：</p>
-<p><img src="/media/%E6%95%B0%E6%8D%AE%E5%BA%93%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/16993816f090efbbtplv-t2oaga2asx-zoom-in-crop-mark4536000-16803406085276.awebp" alt="事务2"></p>
-<p>所以要明白实际上是对数据进行了增删改查等操作后才开启了一个事务。</p>
-<h4 id="如何解决幻读"><a href="#如何解决幻读" class="headerlink" title="如何解决幻读"></a>如何解决幻读</h4><p>很明显可重复读的隔离级别没有办法彻底的解决幻读的问题，如果我们的项目中需要解决幻读的话也有两个办法：</p>
-<ul>
-<li>使用串行化读的隔离级别</li>
-<li>MVCC+next-key locks：next-key locks由record locks(索引加锁) 和 gap locks(间隙锁，每次锁住的不光是需要使用的数据，还会锁住这些数据附近的数据)</li>
-</ul>
-<p>实际上很多的项目中是不会使用到上面的两种方法的，串行化读的性能太差，而且其实幻读很多时候是我们完全可以接受的。</p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -3241,7 +3083,7 @@
               
                 <a href="/archives/index">
               
-                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-count">17</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -3254,7 +3096,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/tags.html">
-                  <span class="site-state-item-count">4</span>
+                  <span class="site-state-item-count">5</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>

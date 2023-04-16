@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Shoushi`s Notes" type="application/atom+xml" />
+
+
+
+
+
+
+<meta name="description" content="title:记一次Drool使用不当导致的OOM异常tag:项目实战记一次Drool使用不当导致的OOM异常问题：​		李宁项目属于两个服务进行集群部署，在25号时候，66，67两个ip都出现tomcat假死现象，组件日志均有打印，接口无法访问，定时任务不跑。 问题分析：分析一：​		当时认为假死是程序中有死锁或者死循环之类的问题导致，但是无依据，遂让实施拉取25号的66ip的dump文件，（6">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Shoushi&#96;s Notes">
+<meta property="og:url" content="http://localhost:4000/2023/04/16/java/%E8%A7%A3%E5%86%B3drools%E4%BD%BF%E7%94%A8%E4%B8%8D%E5%BD%93%E5%AF%BC%E8%87%B4%E7%9A%84oom/index.html">
+<meta property="og:site_name" content="Shoushi&#96;s Notes">
+<meta property="og:description" content="title:记一次Drool使用不当导致的OOM异常tag:项目实战记一次Drool使用不当导致的OOM异常问题：​		李宁项目属于两个服务进行集群部署，在25号时候，66，67两个ip都出现tomcat假死现象，组件日志均有打印，接口无法访问，定时任务不跑。 问题分析：分析一：​		当时认为假死是程序中有死锁或者死循环之类的问题导致，但是无依据，遂让实施拉取25号的66ip的dump文件，（6">
+<meta property="og:locale">
+<meta property="og:image" content="http://localhost:4000/2023/04/16/java/%E8%A7%A3%E5%86%B3drools%E4%BD%BF%E7%94%A8%E4%B8%8D%E5%BD%93%E5%AF%BC%E8%87%B4%E7%9A%84oom/media/%E8%A7%A3%E5%86%B3drools%E4%BD%BF%E7%94%A8%E4%B8%8D%E5%BD%93%E5%AF%BC%E8%87%B4%E7%9A%84oom/image-20230307132550052.png">
+<meta property="og:image" content="http://localhost:4000/media/%E8%A7%A3%E5%86%B3drools%E4%BD%BF%E7%94%A8%E4%B8%8D%E5%BD%93%E5%AF%BC%E8%87%B4%E7%9A%84oom/image-20230307132715519.png">
+<meta property="og:image" content="http://localhost:4000/media/%E8%A7%A3%E5%86%B3drools%E4%BD%BF%E7%94%A8%E4%B8%8D%E5%BD%93%E5%AF%BC%E8%87%B4%E7%9A%84oom/image-20230307133023685.png">
+<meta property="og:image" content="http://localhost:4000/media/%E8%A7%A3%E5%86%B3drools%E4%BD%BF%E7%94%A8%E4%B8%8D%E5%BD%93%E5%AF%BC%E8%87%B4%E7%9A%84oom/image-20230307133559960.png">
+<meta property="article:published_time" content="2023-04-16T12:20:50.463Z">
+<meta property="article:modified_time" content="2023-04-16T12:20:23.524Z">
+<meta property="article:author" content="liqun.guan">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://localhost:4000/2023/04/16/java/%E8%A7%A3%E5%86%B3drools%E4%BD%BF%E7%94%A8%E4%B8%8D%E5%BD%93%E5%AF%BC%E8%87%B4%E7%9A%84oom/media/%E8%A7%A3%E5%86%B3drools%E4%BD%BF%E7%94%A8%E4%B8%8D%E5%BD%93%E5%AF%BC%E8%87%B4%E7%9A%84oom/image-20230307132550052.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://localhost:4000/2023/04/16/java/解决drools使用不当导致的oom/"/>
+
+
+
+
+
+  <title> | Shoushi`s Notes</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Shoushi`s Notes</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/index" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/me" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://localhost:4000/2023/04/16/java/%E8%A7%A3%E5%86%B3drools%E4%BD%BF%E7%94%A8%E4%B8%8D%E5%BD%93%E5%AF%BC%E8%87%B4%E7%9A%84oom/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Shoushi`s Notes">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline"></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2023-04-16T20:20:50+08:00">
+                2023-04-16
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <hr>
+<h2 id="title-记一次Drool使用不当导致的OOM异常tag-项目实战"><a href="#title-记一次Drool使用不当导致的OOM异常tag-项目实战" class="headerlink" title="title:记一次Drool使用不当导致的OOM异常tag:项目实战"></a>title:记一次Drool使用不当导致的OOM异常<br>tag:项目实战</h2><h1 id="记一次Drool使用不当导致的OOM异常"><a href="#记一次Drool使用不当导致的OOM异常" class="headerlink" title="记一次Drool使用不当导致的OOM异常"></a>记一次Drool使用不当导致的OOM异常</h1><h3 id="问题："><a href="#问题：" class="headerlink" title="问题："></a>问题：</h3><p>​		李宁项目属于两个服务进行集群部署，在25号时候，66，67两个ip都出现tomcat假死现象，组件日志均有打印，接口无法访问，定时任务不跑。</p>
+<h3 id="问题分析："><a href="#问题分析：" class="headerlink" title="问题分析："></a>问题分析：</h3><h5 id="分析一："><a href="#分析一：" class="headerlink" title="分析一："></a>分析一：</h5><p>​		当时认为假死是程序中有死锁或者死循环之类的问题导致，但是无依据，遂让实施拉取25号的66ip的dump文件，（67的为了线上继续运行，先重启解决）。</p>
+<p>​		拉取到dump文件后，先使用jdk自带的<strong>jvisualvm</strong>进行分析，看到发生了oom，报错信息如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">&quot;ARTEMIS_TASK_CLUSTER_SCHEDULER_Worker-15&quot;</span> prio=<span class="number">5</span> tid=<span class="number">100</span> RUNNABLE</span><br><span class="line">    at java.lang.OutOfMemoryError.&lt;init&gt;(OutOfMemoryError.java:<span class="number">48</span>)</span><br><span class="line">    at java.util.Arrays.copyOf(Arrays.java:<span class="number">3332</span>)</span><br><span class="line">       Local Variable: <span class="type">char</span>[]#<span class="number">1570195</span></span><br><span class="line">    at java.lang.AbstractStringBuilder.ensureCapacityInternal(AbstractStringBuilder.java:<span class="number">124</span>)</span><br><span class="line">    at java.lang.AbstractStringBuilder.append(AbstractStringBuilder.java:<span class="number">448</span>)</span><br><span class="line">       Local Variable: java.lang.String#<span class="number">1563273</span></span><br><span class="line">    at java.lang.StringBuffer.append(StringBuffer.java:<span class="number">270</span>)</span><br><span class="line">    at java.text.MessageFormat.subformat(MessageFormat.java:<span class="number">1335</span>)</span><br><span class="line">       Local Variable: java.lang.StringBuffer#<span class="number">4</span></span><br><span class="line">       Local Variable: java.text.MessageFormat#<span class="number">3</span></span><br><span class="line">    at java.text.MessageFormat.format(MessageFormat.java:<span class="number">865</span>)</span><br><span class="line">    at java.text.Format.format(Format.java:<span class="number">157</span>)</span><br><span class="line">    at java.text.MessageFormat.format(MessageFormat.java:<span class="number">841</span>)</span><br><span class="line">    at org.quartz.impl.jdbcjobstore.Util.rtp(Util.java:<span class="number">68</span>)</span><br><span class="line">    at org.quartz.impl.jdbcjobstore.StdJDBCDelegate.rtp(StdJDBCDelegate.java:<span class="number">3029</span>)</span><br><span class="line">    at org.quartz.impl.jdbcjobstore.StdJDBCDelegate.updateTriggerStatesForJobFromOtherState(StdJDBCDelegate.java:<span class="number">1513</span>)</span><br><span class="line">       Local Variable: java.lang.String#<span class="number">616911</span></span><br><span class="line">       Local Variable: org.quartz.JobKey#<span class="number">2</span></span><br><span class="line">       Local Variable: java.lang.String#<span class="number">622049</span></span><br><span class="line">    at org.quartz.impl.jdbcjobstore.JobStoreSupport.triggeredJobComplete(JobStoreSupport.java:<span class="number">3103</span>)</span><br><span class="line">       Local Variable: org.quartz.impl.triggers.CronTriggerImpl#<span class="number">3</span></span><br><span class="line">       Local Variable: org.quartz.impl.JobDetailImpl#<span class="number">2</span></span><br><span class="line">    at org.quartz.impl.jdbcjobstore.JobStoreSupport$<span class="number">45.</span>executeVoid(JobStoreSupport.java:<span class="number">3055</span>)</span><br><span class="line">    at org.quartz.impl.jdbcjobstore.JobStoreSupport$VoidTransactionCallback.execute(JobStoreSupport.java:<span class="number">3715</span>)</span><br><span class="line">    at org.quartz.impl.jdbcjobstore.JobStoreSupport$VoidTransactionCallback.execute(JobStoreSupport.java:<span class="number">3713</span>)</span><br><span class="line">    at org.quartz.impl.jdbcjobstore.JobStoreSupport.executeInNonManagedTXLock(JobStoreSupport.java:<span class="number">3799</span>)</span><br><span class="line">       Local Variable: com.sun.proxy.$Proxy1251#<span class="number">1</span></span><br><span class="line">    at org.quartz.impl.jdbcjobstore.JobStoreSupport.retryExecuteInNonManagedTXLock(JobStoreSupport.java:<span class="number">3754</span>)</span><br><span class="line">       Local Variable: java.lang.String#<span class="number">621730</span></span><br><span class="line">       Local Variable: org.springframework.scheduling.quartz.LocalDataSourceJobStore#<span class="number">1</span></span><br><span class="line">       Local Variable: org.quartz.impl.jdbcjobstore.JobStoreSupport$<span class="number">45</span>#<span class="number">1</span></span><br><span class="line">    at org.quartz.impl.jdbcjobstore.JobStoreSupport.triggeredJobComplete(JobStoreSupport.java:<span class="number">3051</span>)</span><br><span class="line">    at org.quartz.core.QuartzScheduler.notifyJobStoreJobComplete(QuartzScheduler.java:<span class="number">1804</span>)</span><br><span class="line">    at org.quartz.core.JobRunShell.run(JobRunShell.java:<span class="number">269</span>)</span><br><span class="line">       Local Variable: org.quartz.core.JobRunShell#<span class="number">2</span></span><br></pre></td></tr></table></figure>
+
+<p>经过查看代码分析，此处就是一个简单的quartz集群的查询字符串，不可能过大导致内存溢出，排除。</p>
+<h5 id="分析二："><a href="#分析二：" class="headerlink" title="分析二："></a>分析二：</h5><p>​		经过jvisualvm查看，确实存在较大的内存占用，但是不直观，具体不明，查资料得知一个很强大👍的工具<strong>MAT</strong>。</p>
+<p>​		MAT依赖于jdk11，此外需要修改MemoryAnalyzer.ini文件，指定jdk路径以及加大内存。</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">-startup</span><br><span class="line">plugins/org.eclipse.equinox.launcher_1.6.400.v20210924-0641.jar</span><br><span class="line">-vm</span><br><span class="line">C:\Program Files\Java\jdk-11\bin\javaw.exe</span><br><span class="line">--launcher.library</span><br><span class="line">plugins/org.eclipse.equinox.launcher.win32.win32.x86_64_1.2.400.v20211117-0650</span><br><span class="line">-vmargs</span><br><span class="line">-Xmx4g</span><br></pre></td></tr></table></figure>
+
+<p>​		1.将dump文件导入MAT，分析得到饼状图，看到有一个占据这3.1GB的大对象存活</p>
+<img src="media/解决drools使用不当导致的oom/image-20230307132550052.png" alt="image-20230307132550052" style="zoom: 50%;" />
+
+<p>​		2. 点击查看Dominator Tree，查看大对象<img src="/media/%E8%A7%A3%E5%86%B3drools%E4%BD%BF%E7%94%A8%E4%B8%8D%E5%BD%93%E5%AF%BC%E8%87%B4%E7%9A%84oom/image-20230307132715519.png" alt="image-20230307132715519"></p>
+<ol start="3">
+<li><p>查看定位到大对象是和drools相关的statefulSeesions,属于kieBaseMap内置的一个HashSet.</p>
+<p><img src="/media/%E8%A7%A3%E5%86%B3drools%E4%BD%BF%E7%94%A8%E4%B8%8D%E5%BD%93%E5%AF%BC%E8%87%B4%E7%9A%84oom/image-20230307133023685.png" alt="image-20230307133023685"></p>
+</li>
+<li><p>大对象定位到后进行代码分析</p>
+<p>drools有状态会话时，必须调用dispose()方法，以确保没有内存泄漏。代码中相关dispose的调用在执行规则后调用，当kieSession.fireAllRules();出错时，即规则代码出错时，会抛异常跳出当前方法而导致跳过dispose（）方法的调用，发生内存泄露。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">helperList</span><span class="params">(String key, List&lt;Object&gt; gList)</span> <span class="keyword">throws</span> ClassNotFoundException &#123;</span><br><span class="line">        <span class="type">KieSession</span> <span class="variable">kieSession</span> <span class="operator">=</span> getSession(key);</span><br><span class="line">        kieSession.setGlobal(GLOB_LIST, gList);</span><br><span class="line">        kieSessionSetGlobalServiceList(key,kieSession);</span><br><span class="line">        kieSession.fireAllRules();</span><br><span class="line">        kieSession.dispose();</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>验证，若出现大量的异常，则会在外层被catch住进行日志输出。</p>
+</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> List&lt;Object&gt; <span class="title function_">droolsHelperListByKey</span><span class="params">(String key, Object... objects)</span> &#123;</span><br><span class="line">        List&lt;Object&gt; gList = <span class="keyword">new</span> <span class="title class_">LinkedList</span>&lt;&gt;();</span><br><span class="line">        gList.addAll(Arrays.asList(objects));</span><br><span class="line">        <span class="keyword">if</span> (StringUtil.isEmpty(key) || CollectionUtil.isEmpty(kieBaseMap) || CollectionUtil.isEmpty(ruleMap)) &#123;</span><br><span class="line">            logger.warn(<span class="string">&quot;droolsHelperListByKey drools getRule is empty key:[&#123;&#125;]&quot;</span>, key);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                helperList(key, gList);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">                logger.error(<span class="string">&quot;droolsHelperListByKey error :&quot;</span>, e);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> gList;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>日志搜索：</p>
+<p><img src="/media/%E8%A7%A3%E5%86%B3drools%E4%BD%BF%E7%94%A8%E4%B8%8D%E5%BD%93%E5%AF%BC%E8%87%B4%E7%9A%84oom/image-20230307133559960.png" alt="image-20230307133559960"></p>
+<p>至此，分析结束。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>对于资源类的数据，务必要保证资源的释放操作。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2023/04/16/java/volitile%E8%AF%A6%E8%A7%A3/" rel="next" title="Volatile 详解">
+                <i class="fa fa-chevron-left"></i> Volatile 详解
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/index">
+              
+                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/tags.html">
+                  <span class="site-state-item-count">5</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/shoushi" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#title-%E8%AE%B0%E4%B8%80%E6%AC%A1Drool%E4%BD%BF%E7%94%A8%E4%B8%8D%E5%BD%93%E5%AF%BC%E8%87%B4%E7%9A%84OOM%E5%BC%82%E5%B8%B8tag-%E9%A1%B9%E7%9B%AE%E5%AE%9E%E6%88%98"><span class="nav-number">1.</span> <span class="nav-text">title:记一次Drool使用不当导致的OOM异常tag:项目实战</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%AE%B0%E4%B8%80%E6%AC%A1Drool%E4%BD%BF%E7%94%A8%E4%B8%8D%E5%BD%93%E5%AF%BC%E8%87%B4%E7%9A%84OOM%E5%BC%82%E5%B8%B8"><span class="nav-number"></span> <span class="nav-text">记一次Drool使用不当导致的OOM异常</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%EF%BC%9A"><span class="nav-number">0.1.</span> <span class="nav-text">问题：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%E5%88%86%E6%9E%90%EF%BC%9A"><span class="nav-number">0.2.</span> <span class="nav-text">问题分析：</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%88%86%E6%9E%90%E4%B8%80%EF%BC%9A"><span class="nav-number">0.2.0.1.</span> <span class="nav-text">分析一：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%88%86%E6%9E%90%E4%BA%8C%EF%BC%9A"><span class="nav-number">0.2.0.2.</span> <span class="nav-text">分析二：</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">1.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">liqun.guan</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

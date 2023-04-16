@@ -1,3 +1,5 @@
+http://localhost:4000/2023/04/16/java/%E8%A7%A3%E5%86%B3drools%E4%BD%BF%E7%94%A8%E4%B8%8D%E5%BD%93%E5%AF%BC%E8%87%B4%E7%9A%84oom/
+http://localhost:4000/2023/04/16/java/volitile%E8%AF%A6%E8%A7%A3/
 http://localhost:4000/2023/04/01/mysql/explain%E8%AF%A6%E8%A7%A3/
 http://localhost:4000/2023/04/12/java/G1/
 http://localhost:4000/archives/index.html
@@ -21,3 +23,4 @@ http://localhost:4000/tags/mysql/
 http://localhost:4000/tags/Quartz/
 http://localhost:4000/tags/Nginx/
 http://localhost:4000/tags/JVM/
+http://localhost:4000/tags/%E5%B9%B6%E5%8F%91/
