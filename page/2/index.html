@@ -253,6 +253,142 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://localhost:4000/2023/03/30/quartz/quarz%20misfire%E7%AD%96%E7%95%A5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Shoushi`s Notes">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2023/03/30/quartz/quarz%20misfire%E7%AD%96%E7%95%A5/" itemprop="url">misfire执行策略</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2023-03-30T23:06:20+08:00">
+                2023-03-30
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h1 id="misfire执行策略"><a href="#misfire执行策略" class="headerlink" title="misfire执行策略"></a>misfire执行策略</h1><p>默认策略为：<strong>MISFIRE_INSTRUCTION_SMART_POLICY</strong> &#x3D; 0</p>
+<p><strong>repeatCount</strong>: 根据定时任务类型判断出的重复次数</p>
+<ol start="0">
+<li><p><strong>MISFIRE_INSTRUCTION_SMART_POLICY</strong><br>智能根据trigger属性选择策略：<br>repeatCount为0，则策略同<strong>MISFIRE_INSTRUCTION_FIRE_NOW</strong><br>repeatCount为<strong>REPEAT_INDEFINITELY</strong>(无限期重复)，则策略同<strong>MISFIRE_INSTRUCTION_RESCHEDULE_NEXT_WITH_REMAINING_COUNT</strong><br>否则策略同<strong>MISFIRE_INSTRUCTION_RESCHEDULE_NOW_WITH_EXISTING_REPEAT_COUNT</strong></p>
+</li>
+<li><p><strong>MISFIRE_INSTRUCTION_FIRE_NOW</strong></p>
+<p>以当前时间为触发频率立即触发执行</p>
+</li>
+<li><p><strong>MISFIRE_INSTRUCTION_RESCHEDULE_NOW_WITH_EXISTING_REPEAT_COUNT</strong></p>
+</li>
+</ol>
+<p>​		以当前时间为触发频率立即触发执行，以总次数-已执行次数作为剩余周期次数，重新计算FinalTime<br>​		调整后的FinalTime会略大于根据starttime计算的到的FinalTime值</p>
+<ol start="3">
+<li><p><strong>MISFIRE_INSTRUCTION_RESCHEDULE_NOW_WITH_REMAINING_REPEAT_COUNT</strong></p>
+<p>不触发立即执行<br>等待下次触发频率周期时刻，执行至FinalTime的剩余周期次数<br>保持FinalTime不变，重新计算剩余周期次数(相当于错过的当做已执行)</p>
+</li>
+</ol>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://localhost:4000/2023/03/30/quartz/quartz%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -676,7 +812,7 @@
               
                 <a href="/archives/index">
               
-                  <span class="site-state-item-count">13</span>
+                  <span class="site-state-item-count">14</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
