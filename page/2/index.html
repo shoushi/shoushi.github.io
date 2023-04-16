@@ -323,173 +323,17 @@
 
       
         
-          
-            <h1 id="Quartz应用与集群原理分析"><a href="#Quartz应用与集群原理分析" class="headerlink" title="Quartz应用与集群原理分析"></a>Quartz应用与集群原理分析</h1><h1 id="结论："><a href="#结论：" class="headerlink" title="结论："></a>结论：</h1><p>Quartz集群同步机制：每当要进行与某种业务相关的数据库操作时，先去QRTZ_LOCKS表中查询操作相关的业务对象所需要的锁，在select语句之后加for update来实现。例如，TRIGGER_ACCESS表示对任务触发器相关的信息进行修改、删除操作时所需要获得的锁。这时，执行查询这个表数据的SQL形如：</p>
+          <h1 id="Quartz应用与集群原理分析"><a href="#Quartz应用与集群原理分析" class="headerlink" title="Quartz应用与集群原理分析"></a>Quartz应用与集群原理分析</h1><h1 id="结论："><a href="#结论：" class="headerlink" title="结论："></a>结论：</h1><p>Quartz集群同步机制：每当要进行与某种业务相关的数据库操作时，先去QRTZ_LOCKS表中查询操作相关的业务对象所需要的锁，在select语句之后加for update来实现。例如，TRIGGER_ACCESS表示对任务触发器相关的信息进行修改、删除操作时所需要获得的锁。这时，执行查询这个表数据的SQL形如：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select * from QRTZ_LOCKS t where t.lock_name=&#x27;TRIGGER_ACCESS&#x27; for update</span><br></pre></td></tr></table></figure>
 
-<p>当一个线程使用上述的SQL对表中的数据执行查询操作时，若查询结果中包含相关的行，数据库就对该行进行ROW LOCK；若此时，另外一个线程使用相同的SQL对表的数据进行查询，由于查询出的数据行已经被数据库锁住了，此时这个线程就只能等待，直到拥有该行锁的线程完成了相关的业务操作，执行了commit动作后，数据库才会释放了相关行的锁，这个线程才能继续执行。</p>
-<h2 id="一、问题背景"><a href="#一、问题背景" class="headerlink" title="一、问题背景"></a>一、问题背景</h2><p>美团CRM系统中每天有大量的后台任务需要调度执行，如构建索引、统计报表、周期同步数据等等，要求任务调度系统具备高可用性、负载均衡特性，可以管理并监控任务的执行流程，以保证任务的正确执行。</p>
-<h2 id="二、历史方案"><a href="#二、历史方案" class="headerlink" title="二、历史方案"></a>二、历史方案</h2><p>美团CRM系统的任务调度模块经历了以下历史方案。</p>
-<p><strong>1. Crontab+SQL</strong></p>
-<p>每天晚上运行定时任务，通过SQL脚本+crontab方式执行，例如，</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">#crm</span><br><span class="line">0 2 * * * /xxx/mtcrm/shell/mtcrm_daily_stat.sql    //每天凌晨2:00执行统计</span><br><span class="line">30 7 * * * /xxx/mtcrm/shell/mtcrm_data_fix.sql     //每天早上7:30执行数据修复</span><br></pre></td></tr></table></figure>
-
-<p>该方案存在以下问题：</p>
-<ul>
-<li>直接访问数据库，各系统业务接口没有重用。</li>
-<li>完成复杂业务需求时，会引入过多中间表。</li>
-<li>业务逻辑计算完全依赖SQL，增大数据库压力。</li>
-<li>任务失败无法自动恢复。</li>
-</ul>
-<p><strong>2. Python+SQL</strong></p>
-<p>采用python脚本(多数据源)+SQL方式执行，例如，</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">def connectCRM():</span><br><span class="line"> return MySQLdb.Connection(&quot;host1&quot;, &quot;uname&quot;, &quot;xxx&quot;, &quot;crm&quot;, 3306, charset=&quot;utf8&quot;)</span><br><span class="line"></span><br><span class="line">def connectTemp():</span><br><span class="line"> return MySQLdb.Connection(&quot;host1&quot;, &quot;uname&quot;, &quot;xxx&quot;, &quot;temp&quot;, 3306, charset=&quot;utf8&quot;)</span><br></pre></td></tr></table></figure>
-
-<p>该方案存在问题：</p>
-<ul>
-<li>直接访问数据，需要理解各系统的数据结构，无法满足动态任务问题，各系统业务接口没有重用。</li>
-<li>无负载均衡。</li>
-<li>任务失败无法恢复。</li>
-<li>在JAVA语言开发中出现异构，且很难统一到自动部署系统中。</li>
-</ul>
-<p><strong>3. Spring+JDK Timer</strong></p>
-<p>该方案使用spring+JDK Timer方式，调用接口完成定时任务，在分布式部署环境下，防止多个节点同时运行任务，需要写死host，控制在一台服务器上执行task。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;bean id=&quot;accountStatusTaskScanner&quot;  class=&quot;xxx.crm.service.impl.AccountStatusTaskScanner&quot; /&gt;</span><br><span class="line">    &lt;task:scheduler id=&quot;taskScheduler&quot; pool-size=&quot;5&quot; /&gt;</span><br><span class="line">    &lt;task:scheduled-tasks scheduler=&quot;taskScheduler&quot;&gt;</span><br><span class="line">    &lt;task:scheduled ref=&quot;accountStatusTaskScanner&quot; method=&quot;execute&quot; cron=&quot;0 0 1 * * ?&quot; /&gt;</span><br><span class="line">&lt;/task:scheduled-tasks&gt;</span><br></pre></td></tr></table></figure>
-
-<p>该方案较方案1，2有很大改进，但仍存在以下问题：</p>
-<ul>
-<li>步骤复杂、分散，任务量增大的情况下，很难扩展</li>
-<li>使用写死服务器Host的方式执行task，存在单点风险，负载均衡手动完成。</li>
-<li>应用重启，任务无法自动恢复。</li>
-</ul>
-<p>CRM系统定时任务走过了很多弯路：定时任务多种实现方式，使配置和代码分散在多处，难以维护和监控；任务执行过程没有保证，没有错误恢复；任务执行异常没有反馈(邮件)；没有集群支持、负载均衡。CRM系统需要分布式的任务调度框架，统一解决问题，Java可以使用的任务调度框架有Quartz，Jcrontab，cron4j，我们选择了Quartz。</p>
-<h2 id="三、为什么选择Quartz"><a href="#三、为什么选择Quartz" class="headerlink" title="三、为什么选择Quartz"></a>三、为什么选择Quartz</h2><p>Quartz是Java领域最著名的开源任务调度工具。Quartz提供了极为广泛的特性如持久化任务，集群和分布式任务等，其特点如下：</p>
-<ul>
-<li>完全由Java写成，方便集成(Spring)</li>
-<li>伸缩性</li>
-<li>负载均衡</li>
-<li>高可用性</li>
-</ul>
-<h2 id="四、Quartz集群部署实践"><a href="#四、Quartz集群部署实践" class="headerlink" title="四、Quartz集群部署实践"></a>四、Quartz集群部署实践</h2><p>CRM中Quartz与Spring结合使用，Spring通过提供org.springframework.scheduling.quartz下的封装类对Quartz支持。</p>
-<p><strong>Quartz集群部署：</strong></p>
-<p><img src="/media/quartz%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/c45f767d.png" alt="Quartz集群部署"></p>
-<p>Quartz集群部署</p>
-<p>Quartz集群中的每个节点是一个独立的Quartz应用，它又管理着其他的节点。该集群需要分别对每个节点分别启动或停止，不像应用服务器的集群，独立的Quartz节点并不与另一个节点或是管理节点通信。Quartz应用是通过数据库表来感知到另一应用。只有使用持久的JobStore才能完成Quqrtz集群。</p>
-<p><strong>基于Spring的集群配置：</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line">&lt;!-- 调度工厂 --&gt;</span><br><span class="line">&lt;bean id=&quot;quartzScheduler&quot;</span><br><span class="line">    class=&quot;org.springframework.scheduling.quartz.SchedulerFactoryBean&quot;&gt;</span><br><span class="line">    &lt;property name=&quot;dataSource&quot; ref=&quot;dataSource&quot; /&gt;</span><br><span class="line">    &lt;property name=&quot;quartzProperties&quot;&gt;</span><br><span class="line">        &lt;props&gt;</span><br><span class="line">            &lt;prop key=&quot;org.quartz.scheduler.instanceName&quot;&gt;CRMscheduler&lt;/prop&gt;</span><br><span class="line">            &lt;prop key=&quot;org.quartz.scheduler.instanceId&quot;&gt;AUTO&lt;/prop&gt;</span><br><span class="line">            &lt;!-- 线程池配置 --&gt;</span><br><span class="line">            &lt;prop key=&quot;org.quartz.threadPool.class&quot;&gt;org.quartz.simpl.SimpleThreadPool&lt;/prop&gt;</span><br><span class="line">            &lt;prop key=&quot;org.quartz.threadPool.threadCount&quot;&gt;20&lt;/prop&gt;</span><br><span class="line">            &lt;prop key=&quot;org.quartz.threadPool.threadPriority&quot;&gt;5&lt;/prop&gt;</span><br><span class="line">            &lt;!-- JobStore 配置 --&gt;</span><br><span class="line">            &lt;prop key=&quot;org.quartz.jobStore.class&quot;&gt;org.quartz.impl.jdbcjobstore.JobStoreTX&lt;/prop&gt;</span><br><span class="line"></span><br><span class="line">            &lt;!-- 集群配置 --&gt;</span><br><span class="line">            &lt;prop key=&quot;org.quartz.jobStore.isClustered&quot;&gt;true&lt;/prop&gt;</span><br><span class="line">            &lt;prop key=&quot;org.quartz.jobStore.clusterCheckinInterval&quot;&gt;15000&lt;/prop&gt;</span><br><span class="line">            &lt;prop key=&quot;org.quartz.jobStore.maxMisfiresToHandleAtATime&quot;&gt;1&lt;/prop&gt;</span><br><span class="line"></span><br><span class="line">            &lt;prop key=&quot;org.quartz.jobStore.misfireThreshold&quot;&gt;120000&lt;/prop&gt;</span><br><span class="line"></span><br><span class="line">            &lt;prop key=&quot;org.quartz.jobStore.tablePrefix&quot;&gt;QRTZ_&lt;/prop&gt;</span><br><span class="line">        &lt;/props&gt;</span><br><span class="line"></span><br><span class="line">    &lt;/property&gt;</span><br><span class="line"></span><br><span class="line">    &lt;property name=&quot;schedulerName&quot; value=&quot;CRMscheduler&quot; /&gt;</span><br><span class="line"></span><br><span class="line">    &lt;!--必须的，QuartzScheduler 延时启动，应用启动完后 QuartzScheduler 再启动 --&gt;</span><br><span class="line">    &lt;property name=&quot;startupDelay&quot; value=&quot;30&quot; /&gt;</span><br><span class="line"></span><br><span class="line">    &lt;property name=&quot;applicationContextSchedulerContextKey&quot; value=&quot;applicationContextKey&quot; /&gt;</span><br><span class="line"></span><br><span class="line">    &lt;!--可选，QuartzScheduler 启动时更新己存在的Job，这样就不用每次修改targetObject后删除qrtz_job_details表对应记录了 --&gt;</span><br><span class="line">    &lt;property name=&quot;overwriteExistingJobs&quot; value=&quot;true&quot; /&gt;</span><br><span class="line"></span><br><span class="line">    &lt;!-- 设置自动启动 --&gt;</span><br><span class="line">    &lt;property name=&quot;autoStartup&quot; value=&quot;true&quot; /&gt;</span><br><span class="line"></span><br><span class="line">    &lt;!-- 注册触发器 --&gt;</span><br><span class="line">    &lt;property name=&quot;triggers&quot;&gt;</span><br><span class="line">        &lt;list&gt;</span><br><span class="line">            &lt;ref bean=&quot;userSyncScannerTrigger&quot; /&gt;</span><br><span class="line">                     ......</span><br><span class="line">        &lt;/list&gt;</span><br><span class="line">    &lt;/property&gt;</span><br><span class="line"></span><br><span class="line">    &lt;!-- 注册jobDetail --&gt;</span><br><span class="line">    &lt;property name=&quot;jobDetails&quot;&gt;</span><br><span class="line">        &lt;list&gt;</span><br><span class="line">        &lt;/list&gt;</span><br><span class="line">    &lt;/property&gt;</span><br><span class="line"></span><br><span class="line">    &lt;property name=&quot;schedulerListeners&quot;&gt;</span><br><span class="line">        &lt;list&gt;</span><br><span class="line">            &lt;ref bean=&quot;quartzExceptionSchedulerListener&quot; /&gt;</span><br><span class="line">        &lt;/list&gt;</span><br><span class="line">    &lt;/property&gt;</span><br><span class="line">&lt;/bean&gt;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">org.quartz.jobStore.class属性为JobStoreTX，将任务持久化到数据中。因为集群中节点依赖于数据库来传播Scheduler实例的状态，你只能在使用JDBC JobStore时应用Quartz集群。</span><br><span class="line"></span><br><span class="line">org.quartz.jobStore.isClustered属性为true，通知Scheduler实例要它参与到一个集群当中。</span><br><span class="line"></span><br><span class="line">org.quartz.jobStore.clusterCheckinInterval属性定义了Scheduler实例检入到数据库中的频率(单位：毫秒)。Scheduler检查是否其他的实例到了它们应当检入的时候未检入；这能指出一个失败的Scheduler实例，且当前 Scheduler会以此来接管任何执行失败并可恢复的Job。通过检入操作，Scheduler 也会更新自身的状态记录。clusterChedkinInterval越小，Scheduler节点检查失败的Scheduler实例就越频繁。默认值是 15000 (即15 秒)。</span><br><span class="line"></span><br><span class="line">其余参数在后文将会详细介绍。</span><br></pre></td></tr></table></figure>
-
-<p><strong>Quartz监控</strong></p>
-<p>CRM后台目前可以做到对Quartz实例的监控、操作以及动态部署Trigger.</p>
-<p><em>Triggers监控：</em></p>
-<p><img src="/media/quartz%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/50ece8f3.png" alt="Quartz Triggers"></p>
-<p>Quartz Triggers</p>
-<p><em>JobDetails监控：</em></p>
-<p><img src="/media/quartz%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/45e70bf3.png" alt="Quartz Jobs"></p>
-<p>Quartz Jobs</p>
-<h2 id="五、Quartz集群原理分析"><a href="#五、Quartz集群原理分析" class="headerlink" title="五、Quartz集群原理分析"></a>五、Quartz集群原理分析</h2><p><strong>1. Quartz集群数据库表</strong></p>
-<p>Quartz的集群部署方案在架构上是分布式的，没有负责集中管理的节点，而是利用数据库锁的方式来实现集群环境下进行并发控制。BTW，分布式部署时需要保证各个节点的系统时间一致。</p>
-<p>Quartz数据库核心表如下：</p>
-<table>
-<thead>
-<tr>
-<th align="left">Table Name</th>
-<th align="left">Description</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="left">QRTZ_CALENDARS</td>
-<td align="left">存储Quartz的Calendar信息</td>
-</tr>
-<tr>
-<td align="left">QRTZ_CRON_TRIGGERS</td>
-<td align="left">存储CronTrigger，包括Cron表达式和时区信息</td>
-</tr>
-<tr>
-<td align="left">QRTZ_FIRED_TRIGGERS</td>
-<td align="left">存储与已触发的Trigger相关的状态信息，以及相联Job的执行信息</td>
-</tr>
-<tr>
-<td align="left">QRTZ_PAUSED_TRIGGER_GRPS</td>
-<td align="left">存储已暂停的Trigger组的信息</td>
-</tr>
-<tr>
-<td align="left">QRTZ_SCHEDULER_STATE</td>
-<td align="left">存储少量的有关Scheduler的状态信息，和别的Scheduler实例</td>
-</tr>
-<tr>
-<td align="left"><strong>QRTZ_LOCKS</strong></td>
-<td align="left"><strong>存储程序的悲观锁的信息</strong></td>
-</tr>
-<tr>
-<td align="left">QRTZ_JOB_DETAILS</td>
-<td align="left">存储每一个已配置的Job的详细信息</td>
-</tr>
-<tr>
-<td align="left">QRTZ_JOB_LISTENERS</td>
-<td align="left">存储有关已配置的JobListener的信息</td>
-</tr>
-<tr>
-<td align="left">QRTZ_SIMPLE_TRIGGERS</td>
-<td align="left">存储简单的Trigger，包括重复次数、间隔、以及已触的次数</td>
-</tr>
-<tr>
-<td align="left">QRTZ_BLOG_TRIGGERS</td>
-<td align="left">Trigger作为Blob类型存储</td>
-</tr>
-<tr>
-<td align="left">QRTZ_TRIGGER_LISTENERS</td>
-<td align="left">存储已配置的TriggerListener的信息</td>
-</tr>
-<tr>
-<td align="left">QRTZ_TRIGGERS</td>
-<td align="left">存储已配置的Trigger的信息</td>
-</tr>
-</tbody></table>
-<p>其中，QRTZ_LOCKS就是Quartz集群实现同步机制的行锁表，其表结构如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">--QRTZ_LOCKS表结构</span><br><span class="line">CREATE TABLE `QRTZ_LOCKS` (</span><br><span class="line">  `LOCK_NAME` varchar(40) NOT NULL,</span><br><span class="line">   PRIMARY KEY (`LOCK_NAME`)</span><br><span class="line">) ENGINE=InnoDB DEFAULT CHARSET=utf8;</span><br><span class="line"></span><br><span class="line">--QRTZ_LOCKS记录</span><br><span class="line">+-----------------+ </span><br><span class="line">| LOCK_NAME       |</span><br><span class="line">+-----------------+ </span><br><span class="line">| CALENDAR_ACCESS |</span><br><span class="line">| JOB_ACCESS      |</span><br><span class="line">| MISFIRE_ACCESS  |</span><br><span class="line">| STATE_ACCESS    |</span><br><span class="line">| TRIGGER_ACCESS  |</span><br><span class="line">+-----------------+</span><br></pre></td></tr></table></figure>
-
-<p>可以看出QRTZ_LOCKS中有5条记录，代表5把锁，分别用于实现多个Quartz Node对Job、Trigger、Calendar访问的同步控制。</p>
-<p><strong>2. Quartz线程模型</strong></p>
-<p>在Quartz中有两类线程：Scheduler调度线程和任务执行线程。<em>任务执行线程</em>：Quartz不会在主线程(QuartzSchedulerThread)中处理用户的Job。Quartz把线程管理的职责委托给ThreadPool，一般的设置使用SimpleThreadPool。SimpleThreadPool创建了一定数量的WorkerThread实例来使得Job能够在线程中进行处理。WorkerThread是定义在SimpleThreadPool类中的内部类，它实质上就是一个线程。例如，CRM中配置如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&lt;!-- 线程池配置 --&gt;</span><br><span class="line">&lt;prop key=&quot;org.quartz.threadPool.class&quot;&gt;org.quartz.simpl.SimpleThreadPool&lt;/prop&gt;</span><br><span class="line">&lt;prop key=&quot;org.quartz.threadPool.threadCount&quot;&gt;20&lt;/prop&gt;</span><br><span class="line">&lt;prop key=&quot;org.quartz.threadPool.threadPriority&quot;&gt;5&lt;/prop&gt;</span><br></pre></td></tr></table></figure>
-
-<p><em>QuartzSchedulerThread调度主线程</em>：QuartzScheduler被创建时创建一个QuartzSchedulerThread实例。</p>
-<p><strong>3. 集群源码分析</strong></p>
-<p>Quartz究竟是如何保证集群情况下trgger处理的信息同步？</p>
-<p>下面跟着源码一步一步分析，QuartzSchedulerThread包含有决定何时下一个Job将被触发的处理循环，主要逻辑在其run()方法中：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">public void run() &#123;</span><br><span class="line">   boolean lastAcquireFailed = false;</span><br><span class="line">   while (!halted.get()) &#123;</span><br><span class="line">     ......</span><br><span class="line"></span><br><span class="line">     int availThreadCount = qsRsrcs.getThreadPool().blockForAvailableThreads();</span><br><span class="line">     if(availThreadCount &gt; 0) &#123; </span><br><span class="line"></span><br><span class="line">     ......</span><br><span class="line"></span><br><span class="line">     //调度器在trigger队列中寻找30秒内一定数目的trigger(需要保证集群节点的系统时间一致)</span><br><span class="line">     triggers = qsRsrcs.getJobStore().acquireNextTriggers(</span><br><span class="line">                            now + idleWaitTime, Math.min(availThreadCount, qsRsrcs.getMaxBatchSize()), qsRsrcs.getBatchTimeWindow());</span><br><span class="line"></span><br><span class="line">     ......</span><br><span class="line"></span><br><span class="line">     //触发trigger</span><br><span class="line">     List&lt;TriggerFiredResult&gt; res = qsRsrcs.getJobStore().triggersFired(triggers);</span><br><span class="line"></span><br><span class="line">     ......</span><br><span class="line"></span><br><span class="line">     //释放trigger</span><br><span class="line">     for (int i = 0; i &lt; triggers.size(); i++) &#123;</span><br><span class="line">         qsRsrcs.getJobStore().releaseAcquiredTrigger(triggers.get(i));</span><br><span class="line">     &#125;</span><br><span class="line"></span><br><span class="line">   &#125;                </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>由此可知，QuartzScheduler调度线程不断获取trigger，触发trigger，释放trigger。下面分析trigger的获取过程，qsRsrcs.getJobStore()返回对象是JobStore，集群环境配置如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&lt;!-- JobStore 配置 --&gt;</span><br><span class="line">&lt;prop key=&quot;org.quartz.jobStore.class&quot;&gt;org.quartz.impl.jdbcjobstore.JobStoreTX&lt;/prop&gt;</span><br></pre></td></tr></table></figure>
-
-<p>JobStoreTX继承自JobStoreSupport，而JobStoreSupport的acquireNextTriggers、triggersFired、releaseAcquiredTrigger方法负责具体trigger相关操作，都必须获得TRIGGER_ACCESS锁。核心逻辑在executeInNonManagedTXLock方法中：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line">protected &lt;T&gt; T executeInNonManagedTXLock(</span><br><span class="line">        String lockName, </span><br><span class="line">        TransactionCallback&lt;T&gt; txCallback, final TransactionValidator&lt;T&gt; txValidator) throws JobPersistenceException &#123;</span><br><span class="line">    boolean transOwner = false;</span><br><span class="line">    Connection conn = null;</span><br><span class="line">    try &#123;</span><br><span class="line">        if (lockName != null) &#123;</span><br><span class="line">            if (getLockHandler().requiresConnection()) &#123;</span><br><span class="line">                conn = getNonManagedTXConnection();</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            //获取锁</span><br><span class="line">            transOwner = getLockHandler().obtainLock(conn, lockName);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        if (conn == null) &#123;</span><br><span class="line">            conn = getNonManagedTXConnection();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        final T result = txCallback.execute(conn);</span><br><span class="line">        try &#123;</span><br><span class="line">            commitConnection(conn);</span><br><span class="line">        &#125; catch (JobPersistenceException e) &#123;</span><br><span class="line">            rollbackConnection(conn);</span><br><span class="line">            if (txValidator == null || !retryExecuteInNonManagedTXLock(lockName, new TransactionCallback&lt;Boolean&gt;() &#123;</span><br><span class="line">                @Override</span><br><span class="line">                public Boolean execute(Connection conn) throws JobPersistenceException &#123;</span><br><span class="line">                    return txValidator.validate(conn, result);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;)) &#123;</span><br><span class="line">                throw e;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        Long sigTime = clearAndGetSignalSchedulingChangeOnTxCompletion();</span><br><span class="line">        if(sigTime != null &amp;&amp; sigTime &gt;= 0) &#123;</span><br><span class="line">            signalSchedulingChangeImmediately(sigTime);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        return result;</span><br><span class="line">    &#125; catch (JobPersistenceException e) &#123;</span><br><span class="line">        rollbackConnection(conn);</span><br><span class="line">        throw e;</span><br><span class="line">    &#125; catch (RuntimeException e) &#123;</span><br><span class="line">        rollbackConnection(conn);</span><br><span class="line">        throw new JobPersistenceException(&quot;Unexpected runtime exception: &quot;</span><br><span class="line">                + e.getMessage(), e);</span><br><span class="line">    &#125; finally &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            releaseLock(lockName, transOwner);      //释放锁</span><br><span class="line">        &#125; finally &#123;</span><br><span class="line">            cleanupConnection(conn);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>由上代码可知Quartz集群基于数据库锁的同步操作流程如下图所示：</p>
-<p><img src="/media/quartz%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/05dac2dd.png" alt="Quartz集群基于锁的同步方案"></p>
-<p>Quartz集群基于锁的同步方案</p>
-<p>一个调度器实例在执行涉及到分布式问题的数据库操作前，首先要获取QUARTZ_LOCKS表中对应的行级锁，获取锁后即可执行其他表中的数据库操作，随着操作事务的提交，行级锁被释放，供其他调度实例获取。集群中的每一个调度器实例都遵循这样一种严格的操作规程。</p>
-<p>getLockHandler()方法返回的对象类型是Semaphore，获取锁和释放锁的具体逻辑由该对象维护</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">public interface Semaphore &#123;</span><br><span class="line"></span><br><span class="line">     boolean obtainLock(Connection conn, String lockName) throws LockException;</span><br><span class="line"></span><br><span class="line">     void releaseLock(String lockName) throws LockException;</span><br><span class="line"></span><br><span class="line">     boolean requiresConnection();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>该接口的实现类完成具体操作锁的逻辑，在JobStoreSupport的初始化方法中注入的Semaphore具体类型是StdRowLockSemaphore</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">setLockHandler(new StdRowLockSemaphore(getTablePrefix(), getInstanceName(), getSelectWithLockSQL()));</span><br></pre></td></tr></table></figure>
-
-<p>StdRowLockSemaphore的源码如下所示：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line">public class StdRowLockSemaphore extends DBSemaphore &#123;</span><br><span class="line">//锁定SQL语句</span><br><span class="line">public static final String SELECT_FOR_LOCK = &quot;SELECT * FROM &quot;</span><br><span class="line">        + TABLE_PREFIX_SUBST + TABLE_LOCKS + &quot; WHERE &quot; + COL_LOCK_NAME</span><br><span class="line">        + &quot; = ? FOR UPDATE&quot;;</span><br><span class="line"></span><br><span class="line">public static final String INSERT_LOCK = &quot;INSERT INTO &quot; + TABLE_PREFIX_SUBST </span><br><span class="line">        + TABLE_LOCKS + &quot;(&quot; + COL_SCHEDULER_NAME + &quot;, &quot; </span><br><span class="line">        + COL_LOCK_NAME + &quot;) VALUES (&quot; + SCHED_NAME_SUBST + &quot;, ?)&quot;; </span><br><span class="line"></span><br><span class="line">//指定锁定SQL</span><br><span class="line">protected void executeSQL(Connection conn, String lockName, String expandedSQL) throws LockException &#123;</span><br><span class="line">    PreparedStatement ps = null;</span><br><span class="line">    ResultSet rs = null;</span><br><span class="line">    try &#123;</span><br><span class="line">        ps = conn.prepareStatement(expandedSQL);</span><br><span class="line">        ps.setString(1, lockName);</span><br><span class="line">        ......</span><br><span class="line">        rs = ps.executeQuery();</span><br><span class="line">        if (!rs.next()) &#123;</span><br><span class="line">            throw new SQLException(Util.rtp(</span><br><span class="line">                &quot;No row exists in table &quot; + TABLE_PREFIX_SUBST +</span><br><span class="line">                TABLE_LOCKS + &quot; for lock named: &quot; + lockName, getTablePrefix()));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; catch (SQLException sqle) &#123;</span><br><span class="line"></span><br><span class="line">    &#125; finally &#123;</span><br><span class="line">      ...... //release resources</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">//获取QRTZ_LOCKS行级锁</span><br><span class="line">public boolean obtainLock(Connection conn, String lockName) throws LockException &#123;</span><br><span class="line">    lockName = lockName.intern();</span><br><span class="line"></span><br><span class="line">    if (!isLockOwner(conn, lockName)) &#123;</span><br><span class="line">        executeSQL(conn, lockName, expandedSQL);</span><br><span class="line"></span><br><span class="line">        getThreadLocks().add(lockName);</span><br><span class="line">    &#125;</span><br><span class="line">    return true;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">//释放QRTZ_LOCKS行级锁</span><br><span class="line">public void releaseLock(Connection conn, String lockName) &#123;</span><br><span class="line">    lockName = lockName.intern();</span><br><span class="line"></span><br><span class="line">    if (isLockOwner(conn, lockName)) &#123;</span><br><span class="line">        getThreadLocks().remove(lockName);</span><br><span class="line">    &#125;</span><br><span class="line">    ......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>至此，总结一下Quartz集群同步机制：每当要进行与某种业务相关的数据库操作时，先去QRTZ_LOCKS表中查询操作相关的业务对象所需要的锁，在select语句之后加for update来实现。例如，TRIGGER_ACCESS表示对任务触发器相关的信息进行修改、删除操作时所需要获得的锁。这时，执行查询这个表数据的SQL形如：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select * from QRTZ_LOCKS t where t.lock_name=&#x27;TRIGGER_ACCESS&#x27; for update</span><br></pre></td></tr></table></figure>
-
-<p>当一个线程使用上述的SQL对表中的数据执行查询操作时，若查询结果中包含相关的行，数据库就对该行进行ROW LOCK；若此时，另外一个线程使用相同的SQL对表的数据进行查询，由于查询出的数据行已经被数据库锁住了，此时这个线程就只能等待，直到拥有该行锁的线程完成了相关的业务操作，执行了commit动作后，数据库才会释放了相关行的锁，这个线程才能继续执行。</p>
-<p>通过这样的机制，在集群环境下，结合悲观锁的机制就可以防止一个线程对数据库数据的操作的结果被另外一个线程所覆盖，从而可以避免一些难以觉察的错误发生。当然，达到这种效果的前提是需要把Connection设置为手动提交，即autoCommit为false。</p>
-<h2 id="六、参考资料"><a href="#六、参考资料" class="headerlink" title="六、参考资料"></a>六、参考资料</h2><ul>
-<li><a target="_blank" rel="noopener" href="http://quartz-scheduler.org/documentation">http://quartz-scheduler.org/documentation</a> Quartz Documentation</li>
-<li><a target="_blank" rel="noopener" href="http://www.ibm.com/developerworks/cn/opensource/os-cn-quartz">http://www.ibm.com/developerworks/cn/opensource/os-cn-quartz</a> 基于Quartz开发企业级任务调度应用</li>
-</ul>
-<p><a target="_blank" rel="noopener" href="https://tech.meituan.com/tags/quartz.html">Quartz</a>, <a target="_blank" rel="noopener" href="https://tech.meituan.com/tags/%E4%BB%BB%E5%8A%A1%E8%B0%83%E5%BA%A6.html">任务调度</a></p>
-
-          
+<p>当一个线程使用上述的SQL对表中的数据执行查询操作时，若查询结果中包含相关的行，数据库就对该行进行ROW LOCK；若此时，另外一个线程使用相同的SQL对表的数据进行查询，由于查询出的数据行已经被数据库锁住了，此时这个线程就只能等待，直到拥有该行锁的线程完成了相关的业务操作，执行了commit动作后，数据库才会释放了相关行的锁，这个线程才能继续执行。、</p>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2023/03/30/quartz/quartz%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
         
       
     </div>
@@ -606,55 +450,14 @@
 
       
         
-          
-            <h1 id="Quartz-现场问题分析"><a href="#Quartz-现场问题分析" class="headerlink" title="Quartz 现场问题分析"></a>Quartz 现场问题分析</h1><h1 id="背景："><a href="#背景：" class="headerlink" title="背景："></a>背景：</h1><p>李宁项目使用了quartz集群，支持高可用服务。</p>
-<h1 id="问题："><a href="#问题：" class="headerlink" title="问题："></a>问题：</h1><p>artemis系统在出库单同步接口请求了多次iwms，导致iwms系统报错，日志表现为一个定时任务本应该一分钟执行一次，但是存在一秒内执行了2次的现象，由于两个服务是交替执行所以也存在每个服务执行一次的情况。</p>
-<p><img src="/.%5Cf%5Cmedia%5C%E7%8E%B0%E5%9C%BA%E6%97%A5%E5%BF%97.png" alt="img"></p>
-<h1 id="问题定位："><a href="#问题定位：" class="headerlink" title="问题定位："></a>问题定位：</h1><ol>
-<li><p>一开始怀疑是数据库不一致导致，两个服务一起执行定时任务，最后排除了数据库不一致的问题</p>
-<p><img src="/.%5Cf%5Cmedia%5C%E6%95%B0%E6%8D%AE%E5%BA%93%E8%BF%9E%E6%8E%A5.png" alt="img"></p>
-</li>
-<li><p>在偶然翻看定时任务时发现了问题，存在两条trigger_name一样的定时任务</p>
-<p><img src="/.%5Cf%5Cmedia%5C%E5%AD%98%E5%9C%A8%E4%B8%A4%E6%9D%A1%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1.png" alt="image-20220708162904441"></p>
-</li>
-<li><p>在本地采用此配置成功复现了此问题</p>
-<p><img src="/.%5Cf%5Cmedia%5C%E9%97%AE%E9%A2%98%E5%A4%8D%E7%8E%B0.png" alt="img"></p>
-</li>
-</ol>
-<h1 id="源码分析"><a href="#源码分析" class="headerlink" title="源码分析"></a>源码分析</h1><ol>
-<li><p>artemis采用trigger_name作为triggerCode</p>
-<img src="f\media\Artemis赋值triggercode.png" alt="image-20220708164509385" style="zoom:50%;" />
-</li>
-<li><p>线程池中先获取到需要触发的trigger</p>
-</li>
-</ol>
-<p><img src="/.%5Cf%5Cmedia%5C%E6%95%B0%E6%8D%AE%E5%BA%93%E6%8B%89%E5%8F%96trigger.png" alt="image-20220708160842046"></p>
-<ol start="2">
-<li><p>等待2ms，直到到达触发时间</p>
-<p>![image-20220708161049886](.\f\media\trigger job触发前等待.png)</p>
-<ol start="3">
-<li><p>触发执行job</p>
-<p><img src="/.%5Cf%5Cmedia%5C%E6%89%A7%E8%A1%8C.png" alt="image-20220708161120719"></p>
-</li>
-</ol>
-</li>
-</ol>
-<h1 id="原因分析："><a href="#原因分析：" class="headerlink" title="原因分析："></a>原因分析：</h1><ol>
-<li>quartz是通过timerConfigTask定时执行，刷新数据库中定时任务的状态配置，corn （0 0&#x2F;1 * * * ?）</li>
-</ol>
-<p><img src="/.%5Cf%5Cmedia%5C%E5%88%B7%E6%96%B0%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1.png" alt="image-20220708163741488"></p>
-<ol start="2">
-<li>在指定出库定时任务为10 0&#x2F;1 * * * ?时，现象消失</li>
-</ol>
-<p><img src="/.%5Cf%5Cmedia%5C%E7%8E%B0%E8%B1%A1%E6%B6%88%E5%A4%B1.png" alt="image-20220708164020634"></p>
-<h1 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h1><p>日志可见，删除前的任务第一次执行，删除后立马执行第二次</p>
-<p><img src="/.%5Cf%5Cmedia%5C%E4%B8%A4%E6%AC%A1%E6%89%A7%E8%A1%8C%E6%97%A5%E5%BF%97.png" alt="image-20220708172158549"></p>
-<h1 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h1><p>​	quartz执行定时任务原理是通过quartz是通过调度线程QuartzSchedulerThread不断的扫描数据库中的数据来获取到那些已经到点要触发的任务，然后调度执行。</p>
-<p>​	数据库配置两条一样的trigger_name时，会导致qrtz_cron_triggers表这条定时任务不停的删除，新增。当出库单定时任务在一分钟执行时，已经生成jobBean放到线程池中执行，与此同时，timerConfigTask也执行，将此条定时任务删除并新增，且这条新的数据，会被调度线程再次拉取出来，生成jobBean丢到线程池中执行，导致一个定时任务出现两次。</p>
-<p>负责任务调度的几个线程：<br> （1）任务执行线程：通常使用一个线程池(SimpleThreadPool)维护一组线程，负责实际每个job的执行。<br> （2）Scheduler调度线程QuartzSchedulerThread ：轮询存储的所有 trigger，如果有需要触发的 trigger，即到达了下一次触发的时间，则从任务执行线程池获取一个空闲线程，执行与该 trigger 关联的任务。<br> （3）处理misfire job的线程MisfireHandler：轮训所有misfire的trigger，原理就是从数据库中查询所有下次触发时间小于当前时间的trigger，按照每个trigger设定的misfire策略处理这些trigger。</p>
-<h1 id="解决办法"><a href="#解决办法" class="headerlink" title="解决办法"></a>解决办法</h1><p>删除多余配置</p>
-
-          
+          <h1 id="Quartz-现场问题分析"><a href="#Quartz-现场问题分析" class="headerlink" title="Quartz 现场问题分析"></a>Quartz 现场问题分析</h1><h1 id="背景："><a href="#背景：" class="headerlink" title="背景："></a>背景：</h1><p>李宁项目使用了quartz集群，支持高可用服务。</p>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2023/03/30/quartz/quartz%20%E7%8E%B0%E5%9C%BA%E9%97%AE%E9%A2%98%E5%88%86%E6%9E%90/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
         
       
     </div>

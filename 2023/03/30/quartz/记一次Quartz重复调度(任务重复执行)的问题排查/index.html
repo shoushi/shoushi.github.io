@@ -97,7 +97,7 @@
 <meta property="og:image" content="http://localhost:4000/media/%E8%AE%B0%E4%B8%80%E6%AC%A1Quartz%E9%87%8D%E5%A4%8D%E8%B0%83%E5%BA%A6(%E4%BB%BB%E5%8A%A1%E9%87%8D%E5%A4%8D%E6%89%A7%E8%A1%8C)%E7%9A%84%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5/bVbdapd.png">
 <meta property="og:image" content="http://localhost:4000/media/%E8%AE%B0%E4%B8%80%E6%AC%A1Quartz%E9%87%8D%E5%A4%8D%E8%B0%83%E5%BA%A6(%E4%BB%BB%E5%8A%A1%E9%87%8D%E5%A4%8D%E6%89%A7%E8%A1%8C)%E7%9A%84%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5/bVbdapg.png">
 <meta property="article:published_time" content="2023-03-30T15:06:20.892Z">
-<meta property="article:modified_time" content="2023-03-30T14:45:51.409Z">
+<meta property="article:modified_time" content="2023-04-16T13:12:43.931Z">
 <meta property="article:author" content="liqun.guan">
 <meta property="article:tag" content="Quartz">
 <meta name="twitter:card" content="summary">
@@ -333,6 +333,8 @@
       
         <h1 id="记一次Quartz重复调度-任务重复执行-的问题排查"><a href="#记一次Quartz重复调度-任务重复执行-的问题排查" class="headerlink" title="记一次Quartz重复调度(任务重复执行)的问题排查"></a>记一次Quartz重复调度(任务重复执行)的问题排查</h1><p> </p>
 <h2 id="1-引子"><a href="#1-引子" class="headerlink" title="1. 引子"></a>1. 引子</h2><p>公司前期改用quartz做任务调度，一日的调度量均在两百万次以上。随着调度量的增加，突然开始出现job重复调度的情况，且没有规律可循。网上也没有说得较为清楚的解决办法，于是我们开始调试Quartz源码，并最终找到了问题所在。 如果没有耐性看完源码解析，可以直接拉到文章最末，有直接简单的解决办法。<br>注：本文中使用的quartz版本为2.3.0，且使用JDBC模式存储Job。</p>
+<span id="more"></span>
+
 <h2 id="2-准备"><a href="#2-准备" class="headerlink" title="2. 准备"></a>2. 准备</h2><p>首先，因为本文是代码级别的分析文章，因而需要提前了解Quartz的用途和用法，网上还是有很多不错的文章，可以提前自行了解。</p>
 <p>其次，在用法之外，我们还需要了解一些Quartz框架的基础概念：</p>
 <p>\1) Quartz把触发job，叫做<strong>fire</strong>。<strong>TRIGGER_STATE</strong>是当前trigger的状态，<strong>PREV_FIRE_TIME</strong>是上一次触发时间，<strong>NEXT_FIRE_TIME</strong>是下一次触发时间，<strong>misfire</strong>是指这个job在某一时刻要触发，却因为某些原因没有触发的情况。</p>
