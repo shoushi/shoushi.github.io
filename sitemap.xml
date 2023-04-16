@@ -191,6 +191,13 @@
 
   
   <url>
+    <loc>http://localhost:4000/tags/%E5%B9%B6%E5%8F%91/</loc>
+    <lastmod>2023-04-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
     <loc>http://localhost:4000/tags/mysql/</loc>
     <lastmod>2023-04-16</lastmod>
     <changefreq>weekly</changefreq>
@@ -198,7 +205,7 @@
   </url>
   
   <url>
-    <loc>http://localhost:4000/tags/Quartz/</loc>
+    <loc>http://localhost:4000/tags/%E9%A1%B9%E7%9B%AE%E5%AE%9E%E8%B7%B5/</loc>
     <lastmod>2023-04-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
@@ -212,21 +219,14 @@
   </url>
   
   <url>
+    <loc>http://localhost:4000/tags/Quartz/</loc>
+    <lastmod>2023-04-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
     <loc>http://localhost:4000/tags/JVM/</loc>
-    <lastmod>2023-04-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>http://localhost:4000/tags/%E5%B9%B6%E5%8F%91/</loc>
-    <lastmod>2023-04-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>http://localhost:4000/tags/%E9%A1%B9%E7%9B%AE%E5%AE%9E%E8%B7%B5/</loc>
     <lastmod>2023-04-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
