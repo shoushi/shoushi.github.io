@@ -101,7 +101,7 @@
 <meta property="og:image" content="http://localhost:4000/media/G1/1620-166208386329113.jpeg">
 <meta property="og:image" content="http://localhost:4000/media/G1/1620-166208386329114.jpeg">
 <meta property="article:published_time" content="2023-04-12T13:31:29.997Z">
-<meta property="article:modified_time" content="2023-04-12T13:35:15.031Z">
+<meta property="article:modified_time" content="2023-04-16T13:06:44.357Z">
 <meta property="article:author" content="liqun.guan">
 <meta property="article:tag" content="JVM">
 <meta name="twitter:card" content="summary">
@@ -337,6 +337,8 @@
       
         <h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a><strong>前言</strong></h3><p>Garbage First(G1)是垃圾收集领域的最新成果，同时也是HotSpot在JVM上力推的垃圾收集器，并赋予取代CMS的使命。如果使用Java 8&#x2F;9，那么有很大可能希望对G1收集器进行评估。本文详细首先对JVM其他的垃圾收集器进行总结，并与G1进行了简单的对比；然后通过G1的内存模型、G1的活动周期，对G1的工作机制进行了介绍；同时还在介绍过程中，描述了可能需要引起注意的优化点。笔者希望通过本文，让有一定JVM基础的读者能尽快掌握G1的知识点。<strong>另，本文较长，建议收藏阅读。</strong></p>
 <h2 id="第一章-概述"><a href="#第一章-概述" class="headerlink" title="第一章 概述"></a><strong>第一章 概述</strong></h2><p>G1(Garbage First)垃圾收集器是当今垃圾回收技术最前沿的成果之一。早在JDK7就已加入JVM的收集器大家庭中，成为HotSpot重点发展的垃圾回收技术。同优秀的CMS垃圾回收器一样，G1也是关注最小时延的垃圾回收器，也同样适合大尺寸堆内存的垃圾收集，官方也推荐使用G1来代替选择CMS。G1最大的特点是引入分区的思路，弱化了分代的概念，合理利用垃圾收集各个周期的资源，解决了其他收集器甚至CMS的众多缺陷。</p>
+<span id="more"></span>
+
 <h2 id="第二章-JVM-GC收集器的回顾与比较"><a href="#第二章-JVM-GC收集器的回顾与比较" class="headerlink" title="第二章 JVM GC收集器的回顾与比较"></a><strong>第二章 JVM GC收集器的回顾与比较</strong></h2><p><img src="/media/G1/1620.jpeg" alt="img"></p>
 <p>从JDK3(1.3)开始，HotSpot团队一直努力朝着高效收集、减少停顿(STW: Stop The World)的方向努力，也贡献了从串行到CMS乃至最新的G1在内的一系列优秀的垃圾收集器。上图展示了JDK的垃圾回收大家庭，以及相互之间的组合关系，下面就几种典型的组合应用进行简单的介绍。</p>
 <h3 id="串行收集器"><a href="#串行收集器" class="headerlink" title="串行收集器"></a><strong>串行收集器</strong></h3><p><img src="/media/G1/1620-16620838632904.jpeg" alt="img"></p>
