@@ -16,8 +16,8 @@ http://localhost:4000/2023/03/29/nginx/mirror-%E4%BD%BF%E7%94%A8/
 http://localhost:4000/about/me.html
 http://localhost:4000/
 http://localhost:4000/tags/%E5%B9%B6%E5%8F%91/
-http://localhost:4000/tags/mysql/
 http://localhost:4000/tags/%E9%A1%B9%E7%9B%AE%E5%AE%9E%E8%B7%B5/
-http://localhost:4000/tags/Nginx/
+http://localhost:4000/tags/mysql/
 http://localhost:4000/tags/Quartz/
+http://localhost:4000/tags/Nginx/
 http://localhost:4000/tags/JVM/
