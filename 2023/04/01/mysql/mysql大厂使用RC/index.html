@@ -81,20 +81,18 @@
 
 
 
-<meta name="description" content="MySQL 默认隔离级别是RR，为什么阿里等大厂会改成RC？数据库MySQL 本文介绍了一些 MySQL数据库的 RR 和 RC 两种事务隔离级别。他们主要在加锁机制、主从同步以及一致性读方面存在一些差异。   我之前写过一篇文章《为什么MySQL选择REPEATABLE READ作为默认隔离级别？》介绍过MySQL 的默认隔离级别是 Repeatable Reads以及背后的原因。 主要是因为M">
+<meta name="description" content="MySQL 默认隔离级别是RR，为什么阿里等大厂会改成RC？本文介绍了一些 MySQL数据库的 RR 和 RC 两种事务隔离级别。他们主要在加锁机制、主从同步以及一致性读方面存在一些差异。 我之前写过一篇文章《为什么MySQL选择REPEATABLE READ作为默认隔离级别？》介绍过MySQL 的默认隔离级别是 Repeatable Reads以及背后的原因。 主要是因为MySQL在主从复制的过">
 <meta property="og:type" content="article">
 <meta property="og:title" content="MySQL 默认隔离级别是RR，为什么阿里等大厂会改成RC？">
 <meta property="og:url" content="http://localhost:4000/2023/04/01/mysql/mysql%E5%A4%A7%E5%8E%82%E4%BD%BF%E7%94%A8RC/index.html">
 <meta property="og:site_name" content="Shoushi&#96;s Notes">
-<meta property="og:description" content="MySQL 默认隔离级别是RR，为什么阿里等大厂会改成RC？数据库MySQL 本文介绍了一些 MySQL数据库的 RR 和 RC 两种事务隔离级别。他们主要在加锁机制、主从同步以及一致性读方面存在一些差异。   我之前写过一篇文章《为什么MySQL选择REPEATABLE READ作为默认隔离级别？》介绍过MySQL 的默认隔离级别是 Repeatable Reads以及背后的原因。 主要是因为M">
+<meta property="og:description" content="MySQL 默认隔离级别是RR，为什么阿里等大厂会改成RC？本文介绍了一些 MySQL数据库的 RR 和 RC 两种事务隔离级别。他们主要在加锁机制、主从同步以及一致性读方面存在一些差异。 我之前写过一篇文章《为什么MySQL选择REPEATABLE READ作为默认隔离级别？》介绍过MySQL 的默认隔离级别是 Repeatable Reads以及背后的原因。 主要是因为MySQL在主从复制的过">
 <meta property="og:locale">
-<meta property="og:image" content="http://localhost:4000/media/mysql%E5%A4%A7%E5%8E%82%E4%BD%BF%E7%94%A8RC/f60aed5572130a97f3bd19e4299af009.jpg">
 <meta property="article:published_time" content="2023-04-01T09:21:36.502Z">
-<meta property="article:modified_time" content="2023-04-16T13:06:15.405Z">
+<meta property="article:modified_time" content="2023-04-16T13:39:27.018Z">
 <meta property="article:author" content="liqun.guan">
 <meta property="article:tag" content="mysql">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://localhost:4000/media/mysql%E5%A4%A7%E5%8E%82%E4%BD%BF%E7%94%A8RC/f60aed5572130a97f3bd19e4299af009.jpg">
 
 
 
@@ -324,10 +322,8 @@
       
 
       
-        <h1 id="MySQL-默认隔离级别是RR，为什么阿里等大厂会改成RC？"><a href="#MySQL-默认隔离级别是RR，为什么阿里等大厂会改成RC？" class="headerlink" title="MySQL 默认隔离级别是RR，为什么阿里等大厂会改成RC？"></a>MySQL 默认隔离级别是RR，为什么阿里等大厂会改成RC？</h1><p><a target="_blank" rel="noopener" href="https://www.51cto.com/database">数据库</a><a target="_blank" rel="noopener" href="https://www.51cto.com/mysql">MySQL</a></p>
-<p>本文介绍了一些 MySQL数据库的 RR 和 RC 两种事务隔离级别。他们主要在加锁机制、主从同步以及一致性读方面存在一些差异。</p>
-<p><a target="_blank" rel="noopener" href="https://s4.51cto.com/oss/202112/10/f60aed5572130a97f3bd19e4299af009.jpg"><img src="/media/mysql%E5%A4%A7%E5%8E%82%E4%BD%BF%E7%94%A8RC/f60aed5572130a97f3bd19e4299af009.jpg" alt="img"></a></p>
-<p> 我之前写过一篇文章《为什么MySQL选择REPEATABLE READ作为默认隔离级别？》介绍过MySQL 的默认隔离级别是 Repeatable Reads以及背后的原因。</p>
+        <h1 id="MySQL-默认隔离级别是RR，为什么阿里等大厂会改成RC？"><a href="#MySQL-默认隔离级别是RR，为什么阿里等大厂会改成RC？" class="headerlink" title="MySQL 默认隔离级别是RR，为什么阿里等大厂会改成RC？"></a>MySQL 默认隔离级别是RR，为什么阿里等大厂会改成RC？</h1><p>本文介绍了一些 MySQL数据库的 RR 和 RC 两种事务隔离级别。他们主要在加锁机制、主从同步以及一致性读方面存在一些差异。</p>
+<p>我之前写过一篇文章《为什么MySQL选择REPEATABLE READ作为默认隔离级别？》介绍过MySQL 的默认隔离级别是 Repeatable Reads以及背后的原因。</p>
 <p>主要是因为MySQL在主从复制的过程是通过bin log 进行数据同步的，而MySQL早期只有statement这种bin log格式，这种格式下，bin log记录的是SQL语句的原文。</p>
 <p>当出现事务乱序的时候，就会导致备库在 SQL 回放之后，结果和主库内容不一致。</p>
 <p>为了解决这个问题，MySQL默认采用了Repetable Read这种隔离级别，因为在 RR 中，会在更新数据的时候增加记录锁的同时增加间隙锁。可以避免这种情况的发生。</p>
