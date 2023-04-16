@@ -1,14 +1,10 @@
 http://localhost:4000/2023/04/16/java/%E8%A7%A3%E5%86%B3drools%E4%BD%BF%E7%94%A8%E4%B8%8D%E5%BD%93%E5%AF%BC%E8%87%B4%E7%9A%84oom/
 http://localhost:4000/2023/04/16/java/volitile%E8%AF%A6%E8%A7%A3/
-http://localhost:4000/2023/04/01/mysql/explain%E8%AF%A6%E8%A7%A3/
 http://localhost:4000/2023/04/12/java/G1/
 http://localhost:4000/archives/index.html
 http://localhost:4000/tags/tags.html
 http://localhost:4000/2023/04/01/mysql/%E9%94%81%E8%AF%A6%E8%A7%A3/
-http://localhost:4000/2023/04/01/mysql/mysql%E8%B7%B3%E8%B7%83%E6%9F%A5%E8%AF%A2%E7%B4%A2%E5%BC%95/
-http://localhost:4000/2023/04/01/mysql/mysql%E5%A4%A7%E5%B0%8F%E5%86%99%E6%95%8F%E6%84%9F/
 http://localhost:4000/2023/04/01/mysql/mysql%E5%A4%A7%E5%8E%82%E4%BD%BF%E7%94%A8RC/
-http://localhost:4000/2023/04/01/mysql/mysql-%E6%8E%92%E5%BA%8F%E8%AF%A6%E8%A7%A3/
 http://localhost:4000/2023/04/01/mysql/mysql%20%E9%94%81/
 http://localhost:4000/2023/04/01/mysql/%E6%85%A2%E6%9F%A5%E8%AF%A2/
 http://localhost:4000/2023/04/01/mysql/%E6%95%B0%E6%8D%AE%E5%BA%93%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%20/

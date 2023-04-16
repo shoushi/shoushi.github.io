@@ -20,15 +20,6 @@
   </url>
   
   <url>
-    <loc>http://localhost:4000/2023/04/01/mysql/explain%E8%AF%A6%E8%A7%A3/</loc>
-    
-    <lastmod>2023-04-12</lastmod>
-    
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
     <loc>http://localhost:4000/2023/04/12/java/G1/</loc>
     
     <lastmod>2023-04-12</lastmod>
@@ -65,34 +56,7 @@
   </url>
   
   <url>
-    <loc>http://localhost:4000/2023/04/01/mysql/mysql%E8%B7%B3%E8%B7%83%E6%9F%A5%E8%AF%A2%E7%B4%A2%E5%BC%95/</loc>
-    
-    <lastmod>2023-04-01</lastmod>
-    
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
-    <loc>http://localhost:4000/2023/04/01/mysql/mysql%E5%A4%A7%E5%B0%8F%E5%86%99%E6%95%8F%E6%84%9F/</loc>
-    
-    <lastmod>2023-04-01</lastmod>
-    
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
     <loc>http://localhost:4000/2023/04/01/mysql/mysql%E5%A4%A7%E5%8E%82%E4%BD%BF%E7%94%A8RC/</loc>
-    
-    <lastmod>2023-04-01</lastmod>
-    
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
-    <loc>http://localhost:4000/2023/04/01/mysql/mysql-%E6%8E%92%E5%BA%8F%E8%AF%A6%E8%A7%A3/</loc>
     
     <lastmod>2023-04-01</lastmod>
     
