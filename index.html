@@ -253,6 +253,155 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://localhost:4000/2023/06/30/spring/spring%20bean%E5%8A%A0%E8%BD%BD%E8%BF%87%E7%A8%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Shoushi`s Notes">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2023/06/30/spring/spring%20bean%E5%8A%A0%E8%BD%BD%E8%BF%87%E7%A8%8B/" itemprop="url">Spring 的 Bean 的加载过程</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2023-06-30T20:34:30+08:00">
+                2023-06-30
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <h1 id="图文并茂，揭秘-Spring-的-Bean-的加载过程"><a href="#图文并茂，揭秘-Spring-的-Bean-的加载过程" class="headerlink" title="图文并茂，揭秘 Spring 的 Bean 的加载过程"></a>图文并茂，揭秘 Spring 的 Bean 的加载过程</h1><p>目录</p>
+<ol>
+<li>概述</li>
+<li>总体流程</li>
+<li>细节分析<br>3.1. 转化 BeanName<br>3.2. 合并 RootBeanDefinition<br>3.3. 处理循环依赖<br>3.4. 创建实例<br>3.5. 注入属性<br>3.6. 初始化<br>3.7. 类型转换</li>
+<li>总结</li>
+</ol>
+<h2 id="1-概述"><a href="#1-概述" class="headerlink" title="1. 概述"></a>1. 概述</h2><p>Spring 作为 Ioc 框架，实现了依赖注入，由一个中心化的 Bean 工厂来负责各个 Bean 的实例化和依赖管理。各个 Bean 可以不需要关心各自的复杂的创建过程，达到了很好的解耦效果。</p>
+<p>我们对 Spring 的工作流进行一个粗略的概括，主要为两大环节：</p>
+<ul>
+<li><strong>解析</strong>，读 xml 配置，扫描类文件，从配置或者注解中获取 Bean 的定义信息，注册一些扩展功能。</li>
+<li><strong>加载</strong>，通过解析完的定义信息获取 Bean 实例。</li>
+</ul>
+<p>![img](media&#x2F;spring bean加载过程&#x2F;webp-16812049283761.webp)</p>
+<p>Spring总体流程</p>
+<p>我们假设所有的配置和扩展类都已经装载到了 ApplicationContext 中，然后具体的分析一下 Bean 的加载流程。</p>
+<p>思考一个问题，抛开 Spring 框架的实现，假设我们手头上已经有一套完整的 Bean Definition Map，然后指定一个 beanName 要进行实例化，需要关心什么？即使我们没有 Spring 框架，也需要了解这两方面的知识：</p>
+<ul>
+<li><strong>作用域</strong>。单例作用域或者原型作用域，单例的话需要全局实例化一次，原型每次创建都需要重新实例化。</li>
+<li><strong>依赖关系</strong>。一个 Bean 如果有依赖，我们需要初始化依赖，然后进行关联。如果多个 Bean 之间存在着循环依赖，A 依赖 B，B 依赖 C，C 又依赖 A，需要解这种循环依赖问题。</li>
+</ul>
+<p>Spring 进行了抽象和封装，使得作用域和依赖关系的配置对开发者透明，我们只需要知道当初在配置里已经明确指定了它的生命周期和依赖了谁，至于是怎么实现的，依赖如何注入，托付给了 Spring 工厂来管理。</p>
+<p>Spring 只暴露了很简单的接口给调用者，比如 <code>getBean</code> ：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ApplicationContext context = <span class="keyword">new</span> <span class="built_in">ClassPathXmlApplicationContext</span>(<span class="string">&quot;hello.xml&quot;</span>);</span><br><span class="line">HelloBean helloBean = (HelloBean) context.<span class="built_in">getBean</span>(<span class="string">&quot;hello&quot;</span>);</span><br><span class="line">helloBean.<span class="built_in">sayHello</span>();</span><br></pre></td></tr></table></figure>
+
+<p>那我们就从 <code>getBean</code> 方法作为入口，去理解 Spring 加载的流程是怎样的，以及内部对创建信息、作用域、依赖关系等等的处理细节。</p>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2023/06/30/spring/spring%20bean%E5%8A%A0%E8%BD%BD%E8%BF%87%E7%A8%8B/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://localhost:4000/2023/04/16/java/%E6%8E%A5%E5%8F%A3%E9%99%90%E6%B5%81%E7%AD%96%E7%95%A5/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1376,131 +1525,6 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://localhost:4000/2023/03/30/quartz/%E8%AE%B0%E4%B8%80%E6%AC%A1Quartz%E9%87%8D%E5%A4%8D%E8%B0%83%E5%BA%A6(%E4%BB%BB%E5%8A%A1%E9%87%8D%E5%A4%8D%E6%89%A7%E8%A1%8C)%E7%9A%84%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Shoushi`s Notes">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2023/03/30/quartz/%E8%AE%B0%E4%B8%80%E6%AC%A1Quartz%E9%87%8D%E5%A4%8D%E8%B0%83%E5%BA%A6(%E4%BB%BB%E5%8A%A1%E9%87%8D%E5%A4%8D%E6%89%A7%E8%A1%8C)%E7%9A%84%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5/" itemprop="url">记一次Quartz重复调度(任务重复执行)的问题排查</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2023-03-30T23:06:20+08:00">
-                2023-03-30
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          <h1 id="记一次Quartz重复调度-任务重复执行-的问题排查"><a href="#记一次Quartz重复调度-任务重复执行-的问题排查" class="headerlink" title="记一次Quartz重复调度(任务重复执行)的问题排查"></a>记一次Quartz重复调度(任务重复执行)的问题排查</h1><p> </p>
-<h2 id="1-引子"><a href="#1-引子" class="headerlink" title="1. 引子"></a>1. 引子</h2><p>公司前期改用quartz做任务调度，一日的调度量均在两百万次以上。随着调度量的增加，突然开始出现job重复调度的情况，且没有规律可循。网上也没有说得较为清楚的解决办法，于是我们开始调试Quartz源码，并最终找到了问题所在。 如果没有耐性看完源码解析，可以直接拉到文章最末，有直接简单的解决办法。<br>注：本文中使用的quartz版本为2.3.0，且使用JDBC模式存储Job。</p>
-          <!--noindex-->
-          <div class="post-button text-center">
-            <a class="btn" href="/2023/03/30/quartz/%E8%AE%B0%E4%B8%80%E6%AC%A1Quartz%E9%87%8D%E5%A4%8D%E8%B0%83%E5%BA%A6(%E4%BB%BB%E5%8A%A1%E9%87%8D%E5%A4%8D%E6%89%A7%E8%A1%8C)%E7%9A%84%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5/#more" rel="contents">
-              阅读全文 &raquo;
-            </a>
-          </div>
-          <!--/noindex-->
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -1551,7 +1575,7 @@
               
                 <a href="/archives/index">
               
-                  <span class="site-state-item-count">14</span>
+                  <span class="site-state-item-count">15</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -1564,7 +1588,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/tags.html">
-                  <span class="site-state-item-count">7</span>
+                  <span class="site-state-item-count">8</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
