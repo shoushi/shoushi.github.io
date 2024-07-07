@@ -1,341 +1,75 @@
+
 <!DOCTYPE html>
-
-
-
-  
-
-
-<html class="theme-next muse use-motion" lang="zh-Hans">
+<html lang="zh-Hans" class="loading">
 <head>
-  <meta charset="UTF-8"/>
-<meta http-equiv="X-UA-Compatible" content="IE=edge" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
-<meta name="theme-color" content="#222">
-
-
-
-
-
-
-
-
-
-<meta http-equiv="Cache-Control" content="no-transform" />
-<meta http-equiv="Cache-Control" content="no-siteapp" />
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-  
-  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
-
-
-
-
-
-
-
-<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
-
-<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
-
-
-  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
-
-
-  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
-
-
-  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
-
-
-  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
-
-
-
-
-
-  <meta name="keywords" content="JVM," />
-
-
-
-
-
-  <link rel="alternate" href="/atom.xml" title="Shoushi`s Notes" type="application/atom+xml" />
-
-
-
-
-
-
-<meta name="description" content="前言Garbage First(G1)是垃圾收集领域的最新成果，同时也是HotSpot在JVM上力推的垃圾收集器，并赋予取代CMS的使命。如果使用Java 8&#x2F;9，那么有很大可能希望对G1收集器进行评估。本文详细首先对JVM其他的垃圾收集器进行总结，并与G1进行了简单的对比；然后通过G1的内存模型、G1的活动周期，对G1的工作机制进行了介绍；同时还在介绍过程中，描述了可能需要引起注意的优">
-<meta property="og:type" content="article">
-<meta property="og:title" content="G1详解">
-<meta property="og:url" content="http://localhost:4000/2023/04/12/java/G1/index.html">
-<meta property="og:site_name" content="Shoushi&#96;s Notes">
-<meta property="og:description" content="前言Garbage First(G1)是垃圾收集领域的最新成果，同时也是HotSpot在JVM上力推的垃圾收集器，并赋予取代CMS的使命。如果使用Java 8&#x2F;9，那么有很大可能希望对G1收集器进行评估。本文详细首先对JVM其他的垃圾收集器进行总结，并与G1进行了简单的对比；然后通过G1的内存模型、G1的活动周期，对G1的工作机制进行了介绍；同时还在介绍过程中，描述了可能需要引起注意的优">
-<meta property="og:locale">
-<meta property="og:image" content="http://localhost:4000/media/G1/1620.jpeg">
-<meta property="og:image" content="http://localhost:4000/media/G1/1620-16620838632904.jpeg">
-<meta property="og:image" content="http://localhost:4000/media/G1/1620-16620838632905.jpeg">
-<meta property="og:image" content="http://localhost:4000/media/G1/1620-16620838632906.jpeg">
-<meta property="og:image" content="http://localhost:4000/media/G1/1620-16620838632917.jpeg">
-<meta property="og:image" content="http://localhost:4000/media/G1/1620-16620838632918.jpeg">
-<meta property="og:image" content="http://localhost:4000/media/G1/1620-16620838632919.jpeg">
-<meta property="og:image" content="http://localhost:4000/media/G1/1620-166208386329110.jpeg">
-<meta property="og:image" content="http://localhost:4000/media/G1/1620-166208386329111.jpeg">
-<meta property="og:image" content="http://localhost:4000/media/G1/1620-166208386329112.jpeg">
-<meta property="og:image" content="http://localhost:4000/media/G1/1620-166208386329113.jpeg">
-<meta property="og:image" content="http://localhost:4000/media/G1/1620-166208386329114.jpeg">
-<meta property="article:published_time" content="2023-04-12T13:31:29.997Z">
-<meta property="article:modified_time" content="2023-04-16T13:06:44.357Z">
-<meta property="article:author" content="liqun.guan">
-<meta property="article:tag" content="JVM">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://localhost:4000/media/G1/1620.jpeg">
-
-
-
-<script type="text/javascript" id="hexo.configurations">
-  var NexT = window.NexT || {};
-  var CONFIG = {
-    root: '',
-    scheme: 'Muse',
-    version: '5.1.4',
-    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
-    fancybox: true,
-    tabs: true,
-    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
-    duoshuo: {
-      userId: '0',
-      author: '博主'
-    },
-    algolia: {
-      applicationID: '',
-      apiKey: '',
-      indexName: '',
-      hits: {"per_page":10},
-      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
-    }
-  };
-</script>
-
-
-
-  <link rel="canonical" href="http://localhost:4000/2023/04/12/java/G1/"/>
-
-
-
-
-
-  <title>G1详解 | Shoushi`s Notes</title>
-  
-
-
-
-
-
-
-
-
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>G1详解 - Shoushi`s Notes</title>
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="google" content="notranslate" />
+    <meta name="keywords" content="Fechin,"> 
+    <meta name="description" content="只是做些力所能及的事罢了,前言Garbage First(G1)是垃圾收集领域的最新成果，同时也是HotSpot在JVM上力推的垃圾收集器，并赋予取代CMS的使命。如果使用Java 8&amp;#x2F;9，那么有很大可能希望对G1,"> 
+    <meta name="author" content="liqun.guan"> 
+    <link rel="alternative" href="atom.xml" title="Shoushi`s Notes" type="application/atom+xml"> 
+    <link rel="icon" href="/img/favicon.png"> 
+    
+    
+    
+    <meta name="twitter:card" content="summary"/>
+    <meta name="twitter:title" content="G1详解 - Shoushi`s Notes"/>
+    <meta name="twitter:description" content="只是做些力所能及的事罢了,前言Garbage First(G1)是垃圾收集领域的最新成果，同时也是HotSpot在JVM上力推的垃圾收集器，并赋予取代CMS的使命。如果使用Java 8&amp;#x2F;9，那么有很大可能希望对G1,"/>
+    
+    
+    
+    
+    <meta property="og:site_name" content="Shoushi`s Notes"/>
+    <meta property="og:type" content="object"/>
+    <meta property="og:title" content="G1详解 - Shoushi`s Notes"/>
+    <meta property="og:description" content="只是做些力所能及的事罢了,前言Garbage First(G1)是垃圾收集领域的最新成果，同时也是HotSpot在JVM上力推的垃圾收集器，并赋予取代CMS的使命。如果使用Java 8&amp;#x2F;9，那么有很大可能希望对G1,"/>
+    
+<link rel="stylesheet" href="/css/diaspora.css">
+
+    <script>window.searchDbPath = "/search.xml";</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro&display=swap" rel="stylesheet">
 <meta name="generator" content="Hexo 6.3.0"></head>
 
-<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
-
-  
-  
-    
-  
-
-  <div class="container sidebar-position-left page-post-detail">
-    <div class="headband"></div>
-
-    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
-      <div class="header-inner"><div class="site-brand-wrapper">
-  <div class="site-meta ">
-    
-
-    <div class="custom-logo-site-title">
-      <a href="/"  class="brand" rel="start">
-        <span class="logo-line-before"><i></i></span>
-        <span class="site-title">Shoushi`s Notes</span>
-        <span class="logo-line-after"><i></i></span>
-      </a>
+<body class="loading">
+    <span id="config-title" style="display:none">Shoushi`s Notes</span>
+    <div id="loader"></div>
+    <div id="single">
+    <div id="top" style="display: block;">
+    <div class="bar" style="width: 0;"></div>
+    <a class="iconfont icon-home image-icon" href="javascript:;" data-url="http://localhost:4000"></a>
+    <div title="播放/暂停" class="iconfont icon-play"></div>
+    <h3 class="subtitle">G1详解</h3>
+    <div class="social">
+        <div>
+            <div class="share">
+                <a title="获取二维码" class="iconfont icon-scan" href="javascript:;"></a>
+            </div>
+            <div id="qr"></div>
+        </div>
     </div>
-      
-        <p class="site-subtitle"></p>
-      
-  </div>
-
-  <div class="site-nav-toggle">
-    <button>
-      <span class="btn-bar"></span>
-      <span class="btn-bar"></span>
-      <span class="btn-bar"></span>
-    </button>
-  </div>
+    <div class="scrollbar"></div>
 </div>
 
-<nav class="site-nav">
-  
-
-  
-    <ul id="menu" class="menu">
-      
-        
-        <li class="menu-item menu-item-home">
-          <a href="/" rel="section">
+    <div class="section">
+        <div class="article">
+    <div class='main'>
+        <h1 class="title">G1详解</h1>
+        <div class="stuff">
+            <span>四月 12, 2023</span>
             
-              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
-            
-            首页
-          </a>
-        </li>
-      
-        
-        <li class="menu-item menu-item-archives">
-          <a href="/archives/index" rel="section">
-            
-              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
-            
-            归档
-          </a>
-        </li>
-      
-        
-        <li class="menu-item menu-item-tags">
-          <a href="/tags/tags" rel="section">
-            
-              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
-            
-            标签
-          </a>
-        </li>
-      
-        
-        <li class="menu-item menu-item-about">
-          <a href="/about/me" rel="section">
-            
-              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
-            
-            关于
-          </a>
-        </li>
-      
+  <ul class="post-tags-list" itemprop="keywords"><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/JVM/" rel="tag">JVM</a></li></ul>
 
-      
-    </ul>
-  
-
-  
-</nav>
-
-
-
- </div>
-    </header>
-
-    <main id="main" class="main">
-      <div class="main-inner">
-        <div class="content-wrap">
-          <div id="content" class="content">
-            
-
-  <div id="posts" class="posts-expand">
-    
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://localhost:4000/2023/04/12/java/G1/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Shoushi`s Notes">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">G1详解</h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2023-04-12T21:31:29+08:00">
-                2023-04-12
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
 
         </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        <h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a><strong>前言</strong></h3><p>Garbage First(G1)是垃圾收集领域的最新成果，同时也是HotSpot在JVM上力推的垃圾收集器，并赋予取代CMS的使命。如果使用Java 8&#x2F;9，那么有很大可能希望对G1收集器进行评估。本文详细首先对JVM其他的垃圾收集器进行总结，并与G1进行了简单的对比；然后通过G1的内存模型、G1的活动周期，对G1的工作机制进行了介绍；同时还在介绍过程中，描述了可能需要引起注意的优化点。笔者希望通过本文，让有一定JVM基础的读者能尽快掌握G1的知识点。<strong>另，本文较长，建议收藏阅读。</strong></p>
+        <div class="content markdown">
+            <h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a><strong>前言</strong></h3><p>Garbage First(G1)是垃圾收集领域的最新成果，同时也是HotSpot在JVM上力推的垃圾收集器，并赋予取代CMS的使命。如果使用Java 8&#x2F;9，那么有很大可能希望对G1收集器进行评估。本文详细首先对JVM其他的垃圾收集器进行总结，并与G1进行了简单的对比；然后通过G1的内存模型、G1的活动周期，对G1的工作机制进行了介绍；同时还在介绍过程中，描述了可能需要引起注意的优化点。笔者希望通过本文，让有一定JVM基础的读者能尽快掌握G1的知识点。<strong>另，本文较长，建议收藏阅读。</strong></p>
 <h2 id="第一章-概述"><a href="#第一章-概述" class="headerlink" title="第一章 概述"></a><strong>第一章 概述</strong></h2><p>G1(Garbage First)垃圾收集器是当今垃圾回收技术最前沿的成果之一。早在JDK7就已加入JVM的收集器大家庭中，成为HotSpot重点发展的垃圾回收技术。同优秀的CMS垃圾回收器一样，G1也是关注最小时延的垃圾回收器，也同样适合大尺寸堆内存的垃圾收集，官方也推荐使用G1来代替选择CMS。G1最大的特点是引入分区的思路，弱化了分代的概念，合理利用垃圾收集各个周期的资源，解决了其他收集器甚至CMS的众多缺陷。</p>
 <span id="more"></span>
 
@@ -492,391 +226,113 @@
 <h4 id=""><a href="#" class="headerlink" title=""></a></h4><p><strong>参考资料</strong></p>
 <p>[1] Charlie H, Monica B, Poonam P, Bengt R. Java Performance Companion [2] 周志明. 深入理解JVM虚拟机</p>
 
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-        <div class="post-tags">
-          
-            <a href="/tags/JVM/" rel="tag"># JVM</a>
-          
-        </div>
-      
-
-      
-      
-      
-
-      
-        <div class="post-nav">
-          <div class="post-nav-next post-nav-item">
+            <!--[if lt IE 9]><script>document.createElement('audio');</script><![endif]-->
+            <audio id="audio" loop="1" preload="auto" controls="controls" data-autoplay="false">
+                <source type="audio/mpeg" src="">
+            </audio>
             
-              <a href="/2023/04/01/mysql/%E9%94%81%E8%AF%A6%E8%A7%A3/" rel="next" title="MySQL——锁">
-                <i class="fa fa-chevron-left"></i> MySQL——锁
-              </a>
+                <ul id="audio-list" style="display:none">
+                    
+                        
+                            <li title="0" data-url="http://link.hhtjim.com/163/425570952.mp3"></li>
+                        
+                    
+                        
+                            <li title="1" data-url="http://link.hhtjim.com/163/425570952.mp3"></li>
+                        
+                    
+                </ul>
             
-          </div>
-
-          <span class="post-nav-divider"></span>
-
-          <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2023/04/16/java/volitile%E8%AF%A6%E8%A7%A3/" rel="prev" title="Volatile 详解">
-                Volatile 详解 <i class="fa fa-chevron-right"></i>
-              </a>
-            
-          </div>
-        </div>
-      
-
-      
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-
-    <div class="post-spread">
-      
-    </div>
-  </div>
-
-
-          </div>
-          
-
-
-          
-
-  
-
-
-
         </div>
         
-          
-  
-  <div class="sidebar-toggle">
-    <div class="sidebar-toggle-line-wrap">
-      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
-      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
-      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
-    </div>
-  </div>
-
-  <aside id="sidebar" class="sidebar">
-    
-    <div class="sidebar-inner">
-
-      
-
-      
-        <ul class="sidebar-nav motion-element">
-          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
-            文章目录
-          </li>
-          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
-            站点概览
-          </li>
-        </ul>
-      
-
-      <section class="site-overview-wrap sidebar-panel">
-        <div class="site-overview">
-          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
-            
-              <p class="site-author-name" itemprop="name"></p>
-              <p class="site-description motion-element" itemprop="description"></p>
-          </div>
-
-          <nav class="site-state motion-element">
-
-            
-              <div class="site-state-item site-state-posts">
-              
-                <a href="/archives/index">
-              
-                  <span class="site-state-item-count">15</span>
-                  <span class="site-state-item-name">日志</span>
-                </a>
-              </div>
-            
-
-            
-
-            
-              
-              
-              <div class="site-state-item site-state-tags">
-                <a href="/tags/tags.html">
-                  <span class="site-state-item-count">8</span>
-                  <span class="site-state-item-name">标签</span>
-                </a>
-              </div>
-            
-
-          </nav>
-
-          
-            <div class="feed-link motion-element">
-              <a href="/atom.xml" rel="alternate">
-                <i class="fa fa-rss"></i>
-                RSS
-              </a>
-            </div>
-          
-
-          
-            <div class="links-of-author motion-element">
-                
-                  <span class="links-of-author-item">
-                    <a href="https://github.com/shoushi" target="_blank" title="GitHub">
-                      
-                        <i class="fa fa-fw fa-github"></i>GitHub</a>
-                  </span>
-                
-            </div>
-          
-
-          
-          
-
-          
-          
-
-          
-
-        </div>
-      </section>
-
-      
-      <!--noindex-->
-        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
-          <div class="post-toc">
-
-            
-              
-            
-
-            
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E7%AB%A0-%E6%A6%82%E8%BF%B0"><span class="nav-number"></span> <span class="nav-text">第一章 概述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%BA%8C%E7%AB%A0-JVM-GC%E6%94%B6%E9%9B%86%E5%99%A8%E7%9A%84%E5%9B%9E%E9%A1%BE%E4%B8%8E%E6%AF%94%E8%BE%83"><span class="nav-number"></span> <span class="nav-text">第二章 JVM GC收集器的回顾与比较</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%B2%E8%A1%8C%E6%94%B6%E9%9B%86%E5%99%A8"><span class="nav-number">1.</span> <span class="nav-text">串行收集器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B9%B6%E8%A1%8C%E6%94%B6%E9%9B%86%E5%99%A8"><span class="nav-number">2.</span> <span class="nav-text">并行收集器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B9%B6%E5%8F%91%E6%A0%87%E8%AE%B0%E6%B8%85%E9%99%A4%E6%94%B6%E9%9B%86%E5%99%A8"><span class="nav-number">3.</span> <span class="nav-text">并发标记清除收集器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Garbage-First"><span class="nav-number">4.</span> <span class="nav-text">Garbage First</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%89%E7%AB%A0-G1%E7%9A%84%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B"><span class="nav-number"></span> <span class="nav-text">第三章 G1的内存模型</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%86%E5%8C%BA%E6%A6%82%E5%BF%B5"><span class="nav-number">1.</span> <span class="nav-text">分区概念</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%86%E5%8C%BA"><span class="nav-number">1.1.</span> <span class="nav-text">分区</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8D%A1%E7%89%87"><span class="nav-number">1.2.</span> <span class="nav-text">卡片</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%A0%86"><span class="nav-number">1.3.</span> <span class="nav-text">堆</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%86%E4%BB%A3%E6%A8%A1%E5%9E%8B"><span class="nav-number">2.</span> <span class="nav-text">分代模型</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%86%E4%BB%A3"><span class="nav-number">2.1.</span> <span class="nav-text">分代</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%9C%AC%E5%9C%B0%E5%88%86%E9%85%8D%E7%BC%93%E5%86%B2"><span class="nav-number">2.2.</span> <span class="nav-text">本地分配缓冲</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%86%E5%8C%BA%E6%A8%A1%E5%9E%8B"><span class="nav-number">2.3.</span> <span class="nav-text">分区模型</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%B7%A8%E5%9E%8B%E5%AF%B9%E8%B1%A1"><span class="nav-number">2.4.</span> <span class="nav-text">巨型对象</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%B7%B2%E8%AE%B0%E5%BF%86%E9%9B%86%E5%90%88"><span class="nav-number">2.5.</span> <span class="nav-text">已记忆集合</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Per-Region-Table"><span class="nav-number">2.6.</span> <span class="nav-text">Per Region Table</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B9%B4%E8%BD%BB%E4%BB%A3%E6%94%B6%E9%9B%86%E9%9B%86%E5%90%88"><span class="nav-number">3.</span> <span class="nav-text">年轻代收集集合</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%B7%B7%E5%90%88%E6%94%B6%E9%9B%86%E9%9B%86%E5%90%88"><span class="nav-number">3.1.</span> <span class="nav-text">混合收集集合</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E5%9B%9B%E7%AB%A0-G1%E7%9A%84%E6%B4%BB%E5%8A%A8%E5%91%A8%E6%9C%9F"><span class="nav-number"></span> <span class="nav-text">第四章 G1的活动周期</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#G1%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E6%B4%BB%E5%8A%A8%E6%B1%87%E6%80%BB"><span class="nav-number">1.</span> <span class="nav-text">G1垃圾收集活动汇总</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#RSet%E7%9A%84%E7%BB%B4%E6%8A%A4"><span class="nav-number">2.</span> <span class="nav-text">RSet的维护</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%A0%85%E6%A0%8F"><span class="nav-number">2.1.</span> <span class="nav-text">栅栏</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%A0%85%E6%A0%8F-Barrier"><span class="nav-number">2.2.</span> <span class="nav-text">栅栏 Barrier</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%86%99%E5%89%8D%E6%A0%85%E6%A0%8F-Pre-Write-Barrrier"><span class="nav-number">2.3.</span> <span class="nav-text">写前栅栏 Pre-Write Barrrier</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%86%99%E5%90%8E%E6%A0%85%E6%A0%8F-Post-Write-Barrrier"><span class="nav-number">2.4.</span> <span class="nav-text">写后栅栏 Post-Write Barrrier</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B5%B7%E5%A7%8B%E5%BF%AB%E7%85%A7%E7%AE%97%E6%B3%95"><span class="nav-number">3.</span> <span class="nav-text">起始快照算法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B9%B6%E5%8F%91%E4%BC%98%E5%8C%96%E7%BA%BF%E7%A8%8B"><span class="nav-number">4.</span> <span class="nav-text">并发优化线程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B9%B6%E5%8F%91%E6%A0%87%E8%AE%B0%E5%91%A8%E6%9C%9F"><span class="nav-number">5.</span> <span class="nav-text">并发标记周期</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B9%B6%E5%8F%91%E6%A0%87%E8%AE%B0%E7%BA%BF%E7%A8%8B"><span class="nav-number">6.</span> <span class="nav-text">并发标记线程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%9D%E5%A7%8B%E6%A0%87%E8%AE%B0"><span class="nav-number">6.1.</span> <span class="nav-text">初始标记</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%A0%B9%E5%88%86%E5%8C%BA%E6%89%AB%E6%8F%8F"><span class="nav-number">6.2.</span> <span class="nav-text">根分区扫描</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%B9%B6%E5%8F%91%E6%A0%87%E8%AE%B0"><span class="nav-number">6.3.</span> <span class="nav-text">并发标记</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AD%98%E6%B4%BB%E6%95%B0%E6%8D%AE%E8%AE%A1%E7%AE%97"><span class="nav-number">6.4.</span> <span class="nav-text">存活数据计算</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%87%8D%E6%96%B0%E6%A0%87%E8%AE%B0"><span class="nav-number">6.5.</span> <span class="nav-text">重新标记</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%B8%85%E9%99%A4"><span class="nav-number">6.6.</span> <span class="nav-text">清除</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B9%B4%E8%BD%BB%E4%BB%A3%E6%94%B6%E9%9B%86-x2F-%E6%B7%B7%E5%90%88%E6%94%B6%E9%9B%86%E5%91%A8%E6%9C%9F"><span class="nav-number">7.</span> <span class="nav-text">年轻代收集&#x2F;混合收集周期</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#GC%E5%B7%A5%E4%BD%9C%E7%BA%BF%E7%A8%8B%E6%95%B0"><span class="nav-number">7.1.</span> <span class="nav-text">GC工作线程数</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%B9%B4%E8%BD%BB%E4%BB%A3%E6%94%B6%E9%9B%86"><span class="nav-number">7.2.</span> <span class="nav-text">年轻代收集</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%B9%B6%E8%A1%8C%E6%B4%BB%E5%8A%A8"><span class="nav-number">7.3.</span> <span class="nav-text">并行活动</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%B2%E8%A1%8C%E6%B4%BB%E5%8A%A8"><span class="nav-number">7.4.</span> <span class="nav-text">串行活动</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%B9%B6%E5%8F%91%E6%A0%87%E8%AE%B0%E5%91%A8%E6%9C%9F%E5%90%8E%E7%9A%84%E5%B9%B4%E8%BD%BB%E4%BB%A3%E6%94%B6%E9%9B%86"><span class="nav-number">7.5.</span> <span class="nav-text">并发标记周期后的年轻代收集</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%B7%B7%E5%90%88%E6%94%B6%E9%9B%86%E5%91%A8%E6%9C%9F"><span class="nav-number">7.6.</span> <span class="nav-text">混合收集周期</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BD%AC%E7%A7%BB%E5%A4%B1%E8%B4%A5%E7%9A%84%E6%8B%85%E4%BF%9D%E6%9C%BA%E5%88%B6-Full-GC"><span class="nav-number">8.</span> <span class="nav-text">转移失败的担保机制 Full GC</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%BA%94%E7%AB%A0-%E6%80%BB%E7%BB%93"><span class="nav-number"></span> <span class="nav-text">第五章 总结</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-number">0.1.</span> <span class="nav-text"></span></a></li></ol></li></ol></div>
-            
-
-          </div>
-        </section>
-      <!--/noindex-->
-      
-
-      
-
-    </div>
-  </aside>
-
-
         
-      </div>
-    </main>
+    <div id="gitalk-container" class="comment link"
+		data-enable="false"
+        data-ae="false"
+        data-ci=""
+        data-cs=""
+        data-r=""
+        data-o=""
+        data-a=""
+        data-d="false"
+    >查看评论</div>
 
-    <footer id="footer" class="footer">
-      <div class="footer-inner">
-        <div class="copyright">&copy; <span itemprop="copyrightYear">2023</span>
-  <span class="with-love">
-    <i class="fa fa-user"></i>
-  </span>
-  <span class="author" itemprop="copyrightHolder">liqun.guan</span>
 
-  
+    </div>
+    
 </div>
 
 
-  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
-
-
-
-  <span class="post-meta-divider">|</span>
-
-
-
-  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
-
-
-
-
-        
-
-
-
-
-
-
-
-        
-      </div>
-    </footer>
-
-    
-      <div class="back-to-top">
-        <i class="fa fa-arrow-up"></i>
-        
-      </div>
-    
-
-    
-
-  </div>
-
-  
-
-<script type="text/javascript">
-  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
-    window.Promise = null;
-  }
-</script>
-
-
-
-
-
-
-
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  
-  
-    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
-  
-
-  
-  
-    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
-  
-
-  
-  
-    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
-  
-
-  
-  
-    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
-  
-
-  
-  
-    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
-  
-
-  
-  
-    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
-  
-
-
-  
-
-
-  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
-
-  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
-
-
-
-  
-  
-
-  
-  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
-<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
-
-
-
-  
-
-
-  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
-
-
-
-  
-
-
-  
-
-
-
-
-	
-
-
-
-
-
-  
-
-
-
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  
-
-
-
-
-
-  
-
-  
-
-  
-
-  
-  
-
-  
-
-  
-
-  
-
+    </div>
+</div>
 </body>
+
+
+<script src="//lib.baomitu.com/jquery/1.8.3/jquery.min.js"></script>
+<script src="/js/plugin.js"></script>
+<script src="/js/typed.js"></script>
+<script src="/js/diaspora.js"></script>
+
+
+<link rel="stylesheet" href="/photoswipe/photoswipe.css">
+<link rel="stylesheet" href="/photoswipe/default-skin/default-skin.css">
+
+
+<script src="/photoswipe/photoswipe.min.js"></script>
+<script src="/photoswipe/photoswipe-ui-default.min.js"></script>
+
+
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+            <div class="pswp__top-bar">
+                <!--  Controls are self-explanatory. Order can be changed. -->
+                <div class="pswp__counter"></div>
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                      <div class="pswp__preloader__cut">
+                        <div class="pswp__preloader__donut"></div>
+                      </div>
+                    </div>
+                </div>
+            </div>
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div> 
+            </div>
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
 </html>
